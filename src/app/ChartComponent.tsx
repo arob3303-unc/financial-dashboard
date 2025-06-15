@@ -25,7 +25,7 @@ export default function AssetPieChart() {
             <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
           ))}
         </Pie>
-        <Tooltip />
+        <Tooltip /> 
       </PieChart>
     </ResponsiveContainer>
   );
