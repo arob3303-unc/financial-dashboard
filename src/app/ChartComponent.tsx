@@ -1,32 +1,32 @@
-'use client'
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from 'recharts';
+// components/Chart.tsx
+'use client';
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
 
-const data = [
-  { name: 'Stocks', value: 400 },
-  { name: 'Bonds', value: 300 },
-  { name: 'Cash', value: 300 },
+const sampleData = [
+  { name: 'Jan', value: 115 },
+  { name: 'Feb', value: 120 },
+  { name: 'Mar', value: 100 },
+  { name: 'Apr', value: 102 },
+  { name: 'May', value: 144 },
+  { name: 'Jun', value: 150 },
+  { name: 'Jul', value: 160 },
+  { name: 'Aug', value: 198 },
+  { name: 'Sep', value: 187 },
+  { name: 'Oct', value: 184 },
+  { name: 'Nov', value: 202 },
+  { name: 'Dec', value: 193 },
 ];
 
-const COLORS = ['#3B82F6', '#1E3A8A', '#60A5FA']; // blue shades
-
-export default function AssetPieChart() {
+export default function Chart() {
   return (
     <ResponsiveContainer width="100%" height={300}>
-      <PieChart>
-        <Pie
-          data={data}
-          cx="50%" cy="50%"
-          outerRadius={80}
-          fill="#8884d8"
-          dataKey="value"
-          label
-        >
-          {data.map((entry, index) => (
-            <Cell key={`cell-${index}`} fill={COLORS[index % COLORS.length]} />
-          ))}
-        </Pie>
-        <Tooltip /> 
-      </PieChart>
+      <LineChart data={sampleData}>
+        <CartesianGrid stroke="#ccc" />
+        <XAxis dataKey="name" />
+        <YAxis />
+        <Tooltip />
+        <Line type="monotone" dataKey="value" stroke="#3b82f6" />
+      </LineChart>
     </ResponsiveContainer>
   );
 }

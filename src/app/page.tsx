@@ -1,5 +1,12 @@
 'use client';
-import AssetPieChart from "./ChartComponent";
+import Chart from "./ChartComponent";
+import {
+  SignedIn,
+  SignedOut,
+  SignInButton,
+  SignUpButton,
+  UserButton,
+} from '@clerk/nextjs';
 
 const user = {
   name: 'Austin Robinson',
@@ -17,22 +24,19 @@ function MyButton() {
   );
 }
 
-function Login() {
-  //clerk auth goes here (eventually)
-
-  return (
-    <>
-      <h1>Clerk Login/Logout</h1>
-    </>
-  )
-}
-
 export default function Home() {
   return (
-    <div className="title">
-      <h1>Austins Dashboard</h1>
-      <AssetPieChart />
-      <Login />
-    </div>
+    <main className="page">
+      <div className="chart-container">
+        <div className="chart-box">
+          <h1> If held...</h1>
+          <Chart />
+        </div>
+        <div className="chart-box">
+          <h1>Option Price(s) for...</h1>
+          <Chart />
+        </div>
+      </div>
+    </main>
   );
 }
