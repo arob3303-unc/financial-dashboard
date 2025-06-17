@@ -1,32 +1,28 @@
-// components/Chart.tsx
-'use client';
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from 'recharts';
+'use client'  // If you're using the App Router
 
-const sampleData = [
-  { name: 'Jan', value: 115 },
-  { name: 'Feb', value: 120 },
-  { name: 'Mar', value: 100 },
-  { name: 'Apr', value: 102 },
-  { name: 'May', value: 144 },
-  { name: 'Jun', value: 150 },
-  { name: 'Jul', value: 160 },
-  { name: 'Aug', value: 198 },
-  { name: 'Sep', value: 187 },
-  { name: 'Oct', value: 184 },
-  { name: 'Nov', value: 202 },
-  { name: 'Dec', value: 193 },
-];
+import { useEffect, useState } from 'react'
+import { LineChart, Line, XAxis, YAxis, Tooltip, ResponsiveContainer } from 'recharts'
 
-export default function Chart() {
+export default function StockChart({ ticker = "AAPL" }) {
+  const [data, setData] = useState([])
+
+  useEffect(() => {
+    fetch(`http://127.0.0.1:5000/stock/${ticker}`)
+      .then(res => res.json())
+      .then(setData)
+      .catch(console.error)
+  }, [ticker])
+
   return (
-    <ResponsiveContainer width="100%" height={300}>
-      <LineChart data={sampleData}>
-        <CartesianGrid stroke="#ccc" />
-        <XAxis dataKey="name" />
-        <YAxis />
-        <Tooltip />
-        <Line type="monotone" dataKey="value" stroke="#3b82f6" />
-      </LineChart>
-    </ResponsiveContainer>
-  );
+    <div style={{ width: '100%', height: 400 }}>
+      <ResponsiveContainer>
+        <LineChart data={data}>
+          <XAxis dataKey="time" hide />
+          <YAxis domain={['auto', 'auto']} />
+          <Tooltip />
+          <Line type="monotone" dataKey="price" stroke="#8884d8" dot={false} />
+        </LineChart>
+      </ResponsiveContainer>
+    </div>
+  )
 }
