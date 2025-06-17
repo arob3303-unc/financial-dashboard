@@ -1,5 +1,5 @@
 'use client';
-import StockChart from "./ChartComponent";
+import ChartComponent from "./ChartComponent";
 
 const user = {
   name: 'Austin Robinson',
@@ -23,11 +23,11 @@ export default function Home() {
       <div className="chart-container">
         <div className="chart-box">
           <h1> If held...</h1>
-          <StockChart />
+          <ChartComponent />
         </div>
         <div className="chart-box">
           <h1> If held111...</h1>
-          <StockChart />
+          <ChartComponent />
         </div>
       </div>
     </main>
