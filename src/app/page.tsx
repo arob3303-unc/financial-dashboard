@@ -27,31 +27,33 @@ export default function Home() {
   
   return (
     <div className="graph-main">
-      <div className="ticker">
-        <select
-          value={selectedTicker}
-          onChange={(e) => setSelectedTicker(e.target.value)}
-          className="ticker-menu"
-        >
-          {availableTickers.map((ticker) => (
-            <option key={ticker} value={ticker}>
-              {ticker}
-            </option>
-          ))}
-        </select>
-      </div>
-      <div className="ticker">
-        <select
-          value={selectedTime}
-          onChange={(e) => setSelectedTime(e.target.value)}
-          className="ticker-menu"
-        >
-          {availableTimes.map((time) => (
-            <option key={time} value={time}>
-              {time}
-            </option>
-          ))}
-        </select>
+      <div className="menu-space">
+        <div className="ticker">
+          <select
+            value={selectedTicker}
+            onChange={(e) => setSelectedTicker(e.target.value)}
+            className="ticker-menu"
+          >
+            {availableTickers.map((ticker) => (
+              <option key={ticker} value={ticker}>
+                {ticker}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div className="ticker">
+          <select
+            value={selectedTime}
+            onChange={(e) => setSelectedTime(e.target.value)}
+            className="ticker-menu"
+          >
+            {availableTimes.map((time) => (
+              <option key={time} value={time}>
+                {time}
+              </option>
+            ))}
+          </select>
+        </div>
       </div>
       <div className="graphs">
         <ChartComponent symbol={selectedTicker} time={selectedTime} />
