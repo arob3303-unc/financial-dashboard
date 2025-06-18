@@ -1,12 +1,5 @@
 'use client';
 import Chart from "./ChartComponent";
-import {
-  SignedIn,
-  SignedOut,
-  SignInButton,
-  SignUpButton,
-  UserButton,
-} from '@clerk/nextjs';
 
 const user = {
   name: 'Austin Robinson',
