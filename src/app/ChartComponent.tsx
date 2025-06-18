@@ -1,117 +1,56 @@
+"use client";
 import React, { useEffect, useState } from 'react';
 import {
   LineChart, Line, XAxis, YAxis, Tooltip, CartesianGrid, ResponsiveContainer
 } from 'recharts';
+import axios from "axios";
 
-interface StockDataPoint {
+type Props = {
+  symbol: string;
   time: string;
+};
+
+type ChartData = {
+  date: string;
   price: number;
-}
-
-interface StockResponse {
-  [x: string]: any;
-  data: StockDataPoint[];
-  start_price: number;
-  end_price: number;
-  investment: number;
-  final_value: number;
-  profit: number;
-}
-
-const tickers = ['AAPL', 'MSFT', 'GOOG', 'TSLA', 'NVDA', 'AMZN', 'META', 'JPM', 'DIS', 'NFLX'];
-
-const ChartComponent: React.FC = () => {
-  const [selectedTicker, setSelectedTicker] = useState('AAPL');
-  const [data, setData] = useState<StockDataPoint[]>([]);
-  const [stats, setStats] = useState<Omit<StockResponse, 'data'> | null>(null);
+};
+const ChartComponent = ({ symbol, time }: Props) => {
+  const [data, setData] = useState<ChartData[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    setLoading(true);
-    fetch(`http://localhost:5000/api/stocks/${selectedTicker}`)
-      .then(res => res.json())
-      .then((json: StockResponse) => {
-        if (json.error) {
-          setData([]);
-          setStats(null);
-        } else {
-          setData(json.data);
-          setStats({
-            start_price: json.start_price,
-            end_price: json.end_price,
-            investment: json.investment,
-            final_value: json.final_value,
-            profit: json.profit
-          });
-        }
+    if (!symbol && !time) return;
+
+    const fetchData = async () => {
+      try {
+        const res = await axios.get(`http://127.0.0.1:5000/api/stocks/${symbol}?time=${time}`);
+        setData(res.data);
         setLoading(false);
-      })
-      .catch(err => {
-        console.error('Error fetching stock data:', err);
+        console.log("Stock data:", res.data);
+      } catch (err) {
+        console.error("Failed to fetch stock data", err);
         setLoading(false);
-      });
-  }, [selectedTicker]);
+      }
+    };
+
+    fetchData();
+  }, [symbol, time]);
+
+  if (loading) return <p>Loading chart for {symbol}...</p>;
+  if (data.length === 0) return <p>No data available for {symbol}</p>;
 
   return (
-    <div style={{ width: '95%', margin: 'auto' }}>
-      {/* Scrollable ticker selector */}
-      <div style={{
-        display: 'flex',
-        overflowX: 'auto',
-        gap: '1rem',
-        padding: '0.5rem 0',
-        marginBottom: '1rem'
-      }}>
-        {tickers.map(ticker => (
-          <button
-            key={ticker}
-            onClick={() => setSelectedTicker(ticker)}
-            style={{
-              padding: '0.5rem 1rem',
-              background: ticker === selectedTicker ? '#007bff' : '#eaeaea',
-              color: ticker === selectedTicker ? 'white' : 'black',
-              border: 'none',
-              borderRadius: '6px',
-              cursor: 'pointer',
-              minWidth: '70px'
-            }}
-          >
-            {ticker}
-          </button>
-        ))}
-      </div>
-
-      {/* Chart */}
-      {loading ? (
-        <p>Loading...</p>
-      ) : data.length ? (
-        <>
-          <ResponsiveContainer width="100%" height={400}>
-            <LineChart data={data}>
-              <CartesianGrid stroke="#ccc" />
-              <XAxis dataKey="time" tick={{ fontSize: 10 }} />
-              <YAxis domain={['auto', 'auto']} />
-              <Tooltip />
-              <Line type="monotone" dataKey="price" stroke="#007bff" dot={false} />
-            </LineChart>
-          </ResponsiveContainer>
-
-          {/* Investment stats */}
-          {stats && (
-            <div style={{ marginTop: '1rem', background: '#f7f7f7', padding: '1rem', borderRadius: '8px' }}>
-              <p><strong>Start Price:</strong> ${stats.start_price.toFixed(2)}</p>
-              <p><strong>End Price:</strong> ${stats.end_price.toFixed(2)}</p>
-              <p><strong>Initial Investment:</strong> ${stats.investment.toFixed(2)}</p>
-              <p><strong>Final Value:</strong> ${stats.final_value.toFixed(2)}</p>
-              <p style={{ color: stats.profit >= 0 ? 'green' : 'red' }}>
-                <strong>{stats.profit >= 0 ? 'Profit' : 'Loss'}:</strong> ${stats.profit.toFixed(2)}
-              </p>
-            </div>
-          )}
-        </>
-      ) : (
-        <p>No data found for {selectedTicker}.</p>
-      )}
+    <div className="chart-box" style={{ width: "100%", maxWidth: 800, margin: "0 auto" }}>
+      <h2 style={{ color: "#aab8cf", textAlign: "center" }}>{symbol} Stock Chart</h2>
+      <ResponsiveContainer width="100%" height={400}>
+        <LineChart data={data}>
+          <CartesianGrid stroke="#ccc" />
+          <XAxis dataKey="date" />
+          <YAxis domain={["auto", "auto"]} />
+          <Tooltip />
+          <Line type="monotone" dataKey="Price" stroke="#8884d8" strokeWidth={2} />
+        </LineChart>
+      </ResponsiveContainer>
     </div>
   );
 };
