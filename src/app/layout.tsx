@@ -1,5 +1,6 @@
 import './globals.css';
-import { ClerkProvider, SignedIn, SignedOut, SignInButton, SignUpButton, UserButton } from '@clerk/nextjs';
+import { ClerkProvider } from '@clerk/nextjs';
+import Navbar from './Navbar';
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {
   return (
@@ -11,17 +12,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <div className='navbar-left'>Balance: (SOON)</div>
               <div className="navbar-middle">Extro</div>
               <div className="navbar-right">
-                <SignedOut>
-                  <SignInButton mode="modal">
-                    <button className="auth-button">Sign In</button>
-                  </SignInButton>
-                  <SignUpButton mode="modal">
-                    <button className="auth-button signup-button">Sign Up</button>
-                  </SignUpButton>
-                </SignedOut>
-                <SignedIn>
-                  <UserButton afterSignOutUrl="/" />
-                </SignedIn>
+                <Navbar />
               </div>
             </div>
           </header>
