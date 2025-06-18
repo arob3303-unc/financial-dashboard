@@ -14,6 +14,27 @@ type ChartData = {
   date: string;
   price: number;
 };
+
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+const CustomTooltip = ({ active, payload }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <div style={{
+        backgroundColor: "#1e1e1e",
+        padding: "10px",
+        borderRadius: "8px",
+        color: "#00bfff",
+        boxShadow: "0 2px 8px rgba(0,0,0,0.3)",
+        fontSize: "14px"
+      }}>
+        <p>{`Price: $${payload[0].value.toFixed(2)}`}</p>
+      </div>
+    );
+  }
+
+  return null;
+};
+
 const ChartComponent = ({ symbol, time }: Props) => {
   const [data, setData] = useState<ChartData[]>([]);
   const [loading, setLoading] = useState(true);
@@ -47,7 +68,7 @@ const ChartComponent = ({ symbol, time }: Props) => {
           <CartesianGrid stroke="#ccc" />
           <XAxis dataKey="date" />
           <YAxis domain={["auto", "auto"]} />
-          <Tooltip />
+          <Tooltip content={<CustomTooltip />} />
           <Line type="monotone" dataKey="Price" stroke="#8884d8" strokeWidth={2} />
         </LineChart>
       </ResponsiveContainer>
