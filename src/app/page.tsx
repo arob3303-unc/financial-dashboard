@@ -18,7 +18,7 @@ import React, { useState } from 'react';
 //   );
 // }
 
-const availableTickers = ["AAPL", "MSFT", "TSLA", "GOOGL", "AMZN"];
+const availableTickers = ["AAPL", "MSFT", "TSLA", "GOOGL", "AMZN", "AMD", "ZM"];
 const availableTimes = ["1 Month", "3 Months", "6 Months", "1 Year", "3 Years", "5 Years"]
 
 export default function Home() {
@@ -57,7 +57,6 @@ export default function Home() {
       </div>
       <div className="graphs">
         <ChartComponent symbol={selectedTicker} time={selectedTime} />
-        <ChartComponent symbol={selectedTicker} time={selectedTime}/>
       </div>
     </div>
   );

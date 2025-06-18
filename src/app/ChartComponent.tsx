@@ -69,7 +69,7 @@ const ChartComponent = ({ symbol, time }: Props) => {
           <XAxis dataKey="date" />
           <YAxis domain={["auto", "auto"]} />
           <Tooltip content={<CustomTooltip />} />
-          <Line type="monotone" dataKey="Price" stroke="#8884d8" strokeWidth={2} />
+          <Line activeDot={{r:5,fill:"#2563eb"}} dot={false} type="monotone" dataKey="Price" stroke="#8884d8" strokeWidth={2} />
         </LineChart>
       </ResponsiveContainer>
     </div>
