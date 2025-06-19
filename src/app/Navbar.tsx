@@ -1,24 +1,20 @@
 'use client';
-import { UserButton } from "@clerk/nextjs";
 import { SetStateAction, useState } from "react";
-import { Settings } from "lucide-react"; // Optional icon
+import { Settings } from "lucide-react"; // icon
 import SettingsModal from "./SettingsModal";
 
 export default function Navbar() {
-  const [balance, setBalance] = useState(10000);
+  const [balance, setBalance] = useState(0);
   const [showSettings, setShowSettings] = useState(false);
 
   return (
-    <div className="w-full flex justify-between items-center p-4 bg-zinc-900 text-white">
-      <div className="text-lg font-semibold">
-        Balance: ${balance.toLocaleString()}
-      </div>
-      <div className="flex gap-4 items-center">
+    <div className="settings-balance-config">
+      <div className="settings">
         <Settings
-          className="cursor-pointer hover:text-blue-400"
+          size={24}
+          className="color-white w-8 h-8 text-white cursor-pointer transition-transform duration-200 hover:scale-125"
           onClick={() => setShowSettings(true)}
         />
-        <UserButton />
       </div>
 
       {showSettings && (
@@ -31,6 +27,9 @@ export default function Navbar() {
           onClose={() => setShowSettings(false)}
         />
       )}
+      <div className="balance">
+        Money: ${balance.toLocaleString()}
+      </div>
     </div>
   );
 }

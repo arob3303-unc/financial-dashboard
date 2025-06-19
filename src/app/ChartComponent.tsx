@@ -62,7 +62,7 @@ const ChartComponent = ({ symbol, time }: Props) => {
 
   return (
     <div className="chart-box" style={{ width: "100%", maxWidth: 800, margin: "0 auto" }}>
-      <h2 style={{ color: "#aab8cf", textAlign: "center" }}>{symbol} Stock Chart</h2>
+      <h2 style={{ color: "#aab8cf", textAlign: "center" }}>{symbol} Chart</h2>
       <ResponsiveContainer width="100%" height={400}>
         <LineChart data={data}>
           <CartesianGrid stroke="#ccc" />

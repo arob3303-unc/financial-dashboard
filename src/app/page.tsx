@@ -18,7 +18,7 @@ import React, { useState } from 'react';
 //   );
 // }
 
-const availableTickers = ["AAPL", "MSFT", "TSLA", "GOOGL", "AMZN", "AMD", "ZM"];
+const availableTickers = ["AAPL", "MSFT", "TSLA", "GOOGL", "AMZN", "AMD", "ZM", "SPY", "VOO"];
 const availableTimes = ["1 Month", "3 Months", "6 Months", "1 Year", "3 Years", "5 Years"]
 
 export default function Home() {

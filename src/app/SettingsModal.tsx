@@ -1,31 +1,38 @@
-import { useState } from "react";
+'use client';
 
-export default function SettingsModal({ currentBalance, onSave, onClose }) {
+import { useState } from 'react';
+
+interface SettingsModalProps {
+  currentBalance: number;
+  onSave: (newBalance: number) => void;
+  onClose: () => void;
+}
+
+export default function SettingsModal({
+  currentBalance,
+  onSave,
+  onClose,
+}: SettingsModalProps) {
   const [input, setInput] = useState(currentBalance.toString());
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-      <div className="bg-zinc-800 p-6 rounded-xl text-white w-80">
-        <h2 className="text-xl mb-4">Set Balance</h2>
+    <div className="modal-overlay">
+      <div className="modal-container">
+        <div className="modal-header">
+          <h2 className="modal-title">Set Fictional Amount of Money</h2>
+          <button onClick={onClose} className="modal-close">×</button>
+        </div>
+
         <input
           type="number"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          className="w-full p-2 rounded bg-zinc-700 text-white mb-4"
+          className="modal-input"
         />
-        <div className="flex justify-end gap-2">
-          <button
-            onClick={onClose}
-            className="px-3 py-1 rounded bg-gray-600 hover:bg-gray-500"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={() => onSave(Number(input))}
-            className="px-3 py-1 rounded bg-blue-600 hover:bg-blue-500"
-          >
-            Save
-          </button>
+
+        <div className="modal-actions">
+          <button onClick={onClose} className="modal-button cancel">Cancel</button>
+          <button onClick={() => onSave(Number(input))} className="modal-button save">Save</button>
         </div>
       </div>
     </div>
