@@ -14,7 +14,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
   return (
     <ClerkProvider>
       <html lang="en">
-        <body className={inter.className}>
+        <body>
           <header className="navbar">
             <div className="navbar-content">
               <div className='navbar-left'>
@@ -22,12 +22,16 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               </div>
               <div className="navbar-middle">Extro</div>
               <div className="navbar-right">
-                <SignedOut>
-                  <SignInButton />
-                </SignedOut>
-                <SignedIn>
-                  <UserButton />
-                </SignedIn>
+                    <SignedOut>
+                      <SignInButton asChild>
+                        <button className="auth-button signup-button">Sign In</button>
+                      </SignInButton>
+                    </SignedOut>
+                  <div>
+                    <SignedIn>
+                      <UserButton />
+                    </SignedIn>
+                  </div>
               </div>
             </div>
           </header>

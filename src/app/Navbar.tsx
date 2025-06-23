@@ -1,54 +1,63 @@
 'use client';
-import { SetStateAction, useEffect, useState } from "react";
-import { Settings } from "lucide-react"; // icon
+
+import { useEffect, useState } from "react";
+import { Settings } from "lucide-react";
 import SettingsModal from "./SettingsModal";
 import { useUser } from "@clerk/nextjs";
 import axios from "axios";
 
 export default function Navbar() {
-  const [balance, setBalance] = useState(0);
+  const [balance, setBalance] = useState<number | null>(null); // null for no mismatch
   const [showSettings, setShowSettings] = useState(false);
   const { user } = useUser();
-  const userId = user?.id;
+  const [isClient, setIsClient] = useState(false);
 
+  // Ensure this component only renders on the client
+  useEffect(() => {
+    setIsClient(true);
+  }, []);
 
   useEffect(() => {
-  if (userId) {
-    axios.get(`/api/balance/${userId}`).then(res => {
-      setBalance(res.data.balance);
-    });
-  }
-}, [userId]);
+    if (user?.id) {
+      axios.get(`/api/balance/${user.id}`).then(res => {
+        setBalance(res.data.balance);
+      });
+    }
+  }, [user?.id]);
 
-const saveBalance = (newBalance: number) => {
-  axios.post('/api/balance', {
-    user_id: userId,
-    balance: newBalance,
-  });
-};
+  const saveBalance = (newBalance: number) => {
+    axios.post('/api/balance', {
+      user_id: user?.id,
+      balance: newBalance,
+    });
+    setBalance(newBalance);
+  };
+
+  if (!isClient) return null; // Prevent SSR mismatch
 
   return (
     <div className="settings-balance-config">
       <div className="settings">
         <Settings
           size={24}
-          className="color-white w-8 h-8 text-white cursor-pointer transition-transform duration-200 hover:scale-125"
+          className="text-white w-8 h-8 cursor-pointer transition-transform duration-200 hover:scale-125"
           onClick={() => setShowSettings(true)}
         />
       </div>
 
       {showSettings && (
         <SettingsModal
-          currentBalance={balance}
-          onSave={(newBalance: SetStateAction<number>) => {
+          currentBalance={balance ?? 0}
+          onSave={(newBalance) => {
             saveBalance(Number(newBalance));
             setShowSettings(false);
           }}
           onClose={() => setShowSettings(false)}
         />
       )}
+
       <div className="balance">
-        Money: ${balance.toLocaleString()}
+        ${balance !== null ? balance.toLocaleString() : "0"}
       </div>
     </div>
   );

@@ -8,15 +8,15 @@ import psycopg2
 app = Flask(__name__)
 CORS(app)
 
-# PostgreSQL connection
-conn = psycopg2.connect(
-    dbname="financial_dashboard",
-    user="postgres",
-    password="Thekey100!",
-    host="localhost",  # or your cloud host
-    port="5432"
-)
-cur = conn.cursor()
+# # PostgreSQL connection
+# conn = psycopg2.connect(
+#     dbname="financial_dashboard",
+#     user="postgres",
+#     password="Thekey100!",
+#     host="localhost",  # or your cloud host
+#     port="5432"
+# )
+# cur = conn.cursor()
 
 # stock data route
 
@@ -60,35 +60,37 @@ def get_stock(symbol):
 
 # GET balance from Clerk id route
 
-@app.route('/api/balance/<user_id>', methods=['GET'])
-def get_balance(user_id):
-    cur.execute("SELECT balance FROM users WHERE id = %s", (user_id,))
-    result = cur.fetchone()
-    if result:
-        return jsonify({"balance": float(result[0])})
-    else:
-        return jsonify({"balance": 0})
+# @app.route('/api/balance/<user_id>', methods=['GET'])
+# def get_balance(user_id):
+#     cur.execute("SELECT balance FROM users WHERE id = %s", (user_id,))
+#     result = cur.fetchone()
+#     if result:
+#         return jsonify({"balance": float(result[0])})
+#     else:
+#         return jsonify({"balance": 0})
 
 # POST (update) balance for user
 
-@app.route('/api/balance', methods=['POST'])
-def update_balance():
-    data = request.json
-    user_id = data.get('user_id')
-    balance = data.get('balance')
+# @app.route('/api/balance', methods=['POST'])
+# def update_balance():
+#     data = request.json
+#     user_id = data.get('user_id')
+#     balance = data.get('balance')
 
-    if not user_id or balance is None:
-        return jsonify({"error": "Missing user_id or balance"}), 400
+#     if not user_id or balance is None:
+#         return jsonify({"error": "Missing user_id or balance"}), 400
 
-    cur.execute("""
-        INSERT INTO users (id, balance)
-        VALUES (%s, %s)
-        ON CONFLICT (id) DO UPDATE SET balance = EXCLUDED.balance
-    """, (user_id, balance))
-    conn.commit()
+#     cur.execute("""
+#         INSERT INTO users (id, balance)
+#         VALUES (%s, %s)
+#         ON CONFLICT (id) DO UPDATE SET balance = EXCLUDED.balance
+#     """, (user_id, balance))
+#     conn.commit()
 
-    return jsonify({"message": "Balance updated."})
+#     return jsonify({"message": "Balance updated."})
+
+
 
 # run
 if __name__ == '__main__':
-    app.run(debug=True)
+    app.run(debug=True, threaded=True)
