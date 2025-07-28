@@ -1,9 +1,6 @@
 import './globals.css';
-import { Inter } from 'next/font/google';
 import { ClerkProvider, SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/nextjs';
 import Navbar from './Navbar';
-
-const inter = Inter({ subsets: ['latin'] });
 
 export const metadata = {
   title: 'Financial Dashboard',
@@ -23,7 +20,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
               <div className="navbar-middle">Extro</div>
               <div className="navbar-right">
                     <SignedOut>
-                      <SignInButton asChild>
+                      <SignInButton>
                         <button className="auth-button signup-button">Sign In</button>
                       </SignInButton>
                     </SignedOut>
