@@ -21,7 +21,7 @@ export default function Home() {
     setShowSecondChart(false); // hide second chart first
 
     async function delayedShow() {
-      await sleep(1); // 500ms delay
+      await sleep(0); // 500ms delay
       setShowSecondChart(true); // then show second chart
     }
 
