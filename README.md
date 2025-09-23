@@ -26,5 +26,7 @@ Extro is a fictional stock market forecaster and dashboard tool. Users create ac
 ---
 
 ## 🖼️ Screenshots
-<img width="949" height="524" alt="image" src="https://github.com/user-attachments/assets/a65d1a2d-77f2-4646-8776-5630e293b291" />
+1. Picture of website
+<img width="675" height="450" alt="image" src="https://github.com/user-attachments/assets/a65d1a2d-77f2-4646-8776-5630e293b291" />
+
 - It is a work in progress - The profit is based on a $1,000 initial investment, and will soon be updated for a user input value of any amount.
