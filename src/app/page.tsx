@@ -1,5 +1,6 @@
 'use client';
 import ChartComponent from "./ChartComponent";
+import LLMTextBox from "./LLMTextBox"
 import React, { useEffect, useState } from 'react';
 
 const availableTickers = ["AAPL", "MSFT", "TSLA", "GOOGL", "AMZN", "AMD", "ZM", "SPY", "VOO", "NVDA"];
@@ -16,10 +17,15 @@ export default function Home() {
 
   const [showSecondChart, setShowSecondChart] = useState(false);
 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [ticker1Data, setTicker1Data] = useState<{ start: string; end: string; profit: number } | null>(null);
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  const [ticker2Data, setTicker2Data] = useState<{ start: string; end: string; profit: number } | null>(null);
+
   // Whenever selectedTicker2 or selectedTime changes, delay showing 2nd chart
   useEffect(() => {
     setShowSecondChart(false); // hide second chart first
-
+    
     async function delayedShow() {
       await sleep(0); // 500ms delay
       setShowSecondChart(true); // then show second chart
@@ -32,7 +38,7 @@ export default function Home() {
   return (
     <div className="graph-main">
       <div className="menu-space">
-        {/* ... your selects here ... */}
+        {/* ... user selects here ... */}
         <div className="ticker">
           <select
             value={selectedTicker1}
@@ -69,8 +75,22 @@ export default function Home() {
       </div>
 
       <div className="graphs">
-        <ChartComponent symbol={selectedTicker1} time={selectedTime} />
-        {showSecondChart && <ChartComponent symbol={selectedTicker2} time={selectedTime} />}
+        <ChartComponent symbol={selectedTicker1} time={selectedTime} onDataLoaded={(data) => setTicker1Data(data)} />
+        {showSecondChart && <ChartComponent symbol={selectedTicker2} time={selectedTime} onDataLoaded={(data) => setTicker2Data(data)} />}
+      </div>
+      
+      <div className="Prompt-Box">
+        {ticker1Data && ticker2Data && (
+        <LLMTextBox
+          ticker1={selectedTicker1}
+          ticker2={selectedTicker2}
+          selectedTime={selectedTime}
+          profit1={ticker1Data.profit}
+          profit2={ticker2Data.profit}
+          start={ticker1Data.start}
+          end={ticker1Data.end}
+        />
+      )}
       </div>
     </div>
   );

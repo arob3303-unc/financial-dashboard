@@ -8,6 +8,7 @@ import axios from "axios";
 type Props = {
   symbol: string;
   time: string;
+  onDataLoaded?: (data: { start: string; end: string; profit: number }) => void; // for openai prompt
 };
 
 type ChartData = {
@@ -35,7 +36,9 @@ const CustomTooltip = ({ active, payload }: any) => {
   return null;
 };
 
-const ChartComponent = ({ symbol, time }: Props) => {
+
+
+const ChartComponent = ({ symbol, time, onDataLoaded }: Props) => {
   const [data, setData] = useState<ChartData[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -45,9 +48,23 @@ const ChartComponent = ({ symbol, time }: Props) => {
     const fetchData = async () => {
       try {
         const res = await axios.get(`http://127.0.0.1:5000/api/stocks/${symbol}?time=${time}`);
+        const fetchedData = res.data;
         setData(res.data);
         setLoading(false);
         console.log("Stock data:", res.data);
+
+        if (fetchedData.length > 1 && onDataLoaded) {
+        const startPrice = fetchedData[0].Price;
+        const endPrice = fetchedData[fetchedData.length - 1].Price;
+        const profitPct = ((endPrice - startPrice) / startPrice) * 100;
+
+        onDataLoaded({
+          start: fetchedData[0].date,
+          end: fetchedData[fetchedData.length - 1].date,
+          profit: parseFloat(profitPct.toFixed(2)),
+        });
+      }
+
       } catch (err) {
         console.error("Failed to fetch stock data", err);
         setLoading(false);
