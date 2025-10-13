@@ -65,8 +65,8 @@ const InvestmentExplanation: React.FC<InvestmentExplanationProps> = ({
   };
 
   return (
-    <div className="explanation-box bg-white rounded-xl shadow-md p-4 mt-4">
-      <h3 className="text-lg font-semibold mb-2">AI Investment Explanation</h3>
+    <div className="Prompt-Outer">
+      <h3 className="Prompt-Title">AI Generated Financial Advise</h3>
       {loading ? (
         <p>Generating explanation...</p>
       ) : error ? (
@@ -76,7 +76,7 @@ const InvestmentExplanation: React.FC<InvestmentExplanationProps> = ({
           readOnly
           value={explanation}
           rows={6}
-          className="w-full border rounded p-2 bg-gray-50"
+          className="Prompt-Text"
           placeholder="GPT will explain your comparison here..."
         />
       )}
