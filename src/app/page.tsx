@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { SignedIn, SignedOut, SignInButton } from "@clerk/nextjs";
+import { Show, SignInButton } from "@clerk/nextjs";
 import { Info } from "lucide-react";
 
 import { AiRecommendation } from "@/components/AiRecommendation";
@@ -232,7 +232,7 @@ export default function Home() {
         <ChartPanel symbol={comparison} timeframe={timeframe} slot="chart-2" />
       </section>
 
-      <SignedIn>
+      <Show when="signed-in">
         <AiRecommendation
           symbol={primary}
           timeframe={timeframe}
@@ -241,9 +241,9 @@ export default function Home() {
           forecast={forecast}
           ready={!primaryData.loading && !!meta}
         />
-      </SignedIn>
+      </Show>
 
-      <SignedOut>
+      <Show when="signed-out">
         <Card>
           <CardHeader>
             <CardTitle>AI outlook</CardTitle>
@@ -264,7 +264,7 @@ export default function Home() {
             </Alert>
           </CardContent>
         </Card>
-      </SignedOut>
+      </Show>
 
       <p className="text-muted-foreground text-xs">
         Extro is a simulation. Prices are real market data; balances, profits and

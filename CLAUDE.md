@@ -16,7 +16,7 @@ and forecasts are simulated for demonstration.
 ```
 financial-dashboard/            <- the git repo / npm project; this is the whole app
 ├── src/
-│   ├── middleware.ts           Clerk; protects /api/balance + /api/recommendation only
+│   ├── proxy.ts                Clerk request context (Next 16 renamed `middleware.ts`)
 │   ├── app/                    Next.js 15 App Router
 │   │   ├── layout.tsx          ClerkProvider + ThemeProvider + app shell header
 │   │   ├── page.tsx            The dashboard
@@ -70,7 +70,7 @@ Clerk dashboard; `pk_test_…` will build but sign-in will misbehave.
 ```bash
 npm run dev       # everything, on :3000
 npm run build     # production build; must pass before committing
-npm run lint
+npm run lint      # `eslint .` -- `next lint` was removed in Next 16
 ```
 
 ## Environment variables
@@ -133,6 +133,18 @@ of `/api/*` would break them.
   validates shape and throws `ApiError` otherwise. See the work log entry for 2026-09-04.
 - Chart colors come from the `ChartConfig` / CSS variables so they work in both themes; don't hardcode hex.
 - Tailwind v4: `globals.css` uses `@import "tailwindcss"`, **not** the v3 `@tailwind` directives.
+- **Clerk is Core 3 (v7).** `<SignedIn>` / `<SignedOut>` / `<Protect>` no longer exist — use
+  `<Show when="signed-in" | "signed-out" | {role|permission|feature|plan} | (has) => boolean>`,
+  with `fallback` for the other branch. The removed names are still *exported* as stubs that
+  throw at render, so **TypeScript will not catch them** — grep, don't rely on `tsc`.
+- **Authorization lives in the route handler, not in `proxy.ts`.** Clerk Core 3 deprecates
+  `createRouteMatcher`: path matching can diverge from how Next actually routes a request and
+  leave a "protected" resource reachable. Every route that reads a balance or spends money on a
+  Claude call does its own `const { userId } = await auth()` check and answers 401 itself.
+- **Next 16 renamed `middleware.ts` to `proxy.ts`.** Never have both — Next errors when it sees
+  the two together.
+- Next 16 appends a `nextjs-agent-rules` block to this file on every `next dev`. Commit it; it
+  regenerates otherwise. It points at bundled docs in `node_modules/next/dist/docs/`.
 - Forecast and summary maths lives in `src/lib/market.ts` and is pure — no Node or browser
   APIs — so the routes and the client share it and it can be exercised directly.
 - Claude API calls use `claude-opus-5` with `thinking: {type: "adaptive"}`. `budget_tokens` is rejected
@@ -286,3 +298,62 @@ points match to the cent, including the business-day date sequence.
 
 **Still not verified end-to-end:** the live Claude call — no `ANTHROPIC_API_KEY` in this
 environment.
+
+### 2026-09-04 (later still) — Clerk Core 3 + Next 16
+
+Dependencies were bumped to Next **16.3.4** and `@clerk/nextjs` **7.9.1**, and the Vercel build
+failed at prerender with `<SignedIn> is not available in @clerk/nextjs Core 3`.
+
+**Core 3 removed `<SignedIn>`, `<SignedOut>` and `<Protect>`**, replacing all three with
+`<Show when={...}>`. They are still exported — as stubs typed to return `never` that throw when
+rendered — which is exactly why the build reported *"Finished TypeScript"* and then died several
+steps later during static generation. **A passing `tsc` proves nothing here; grep is the only
+reliable check.** Two files used them: `src/app/page.tsx` and `src/components/AppHeader.tsx`.
+
+Both are `"use client"`, which needs no special handling: `@clerk/nextjs` resolves `Show` through a
+`react-server` export condition, so client components get the synchronous client component and
+server components get the async one, with identical props.
+
+In `AppHeader` the adjacent `<SignedOut><SignInButton/></SignedOut>` +
+`<SignedIn><UserButton/></SignedIn>` pair collapsed into one `<Show when="signed-in" fallback={…}>`.
+
+Two pieces of widely-repeated Core 3 upgrade advice did **not** apply: there is no `<Protect>` here,
+and no `setActive()` (so no `finalize()` migration). `useAuth()` is unchanged.
+
+**Next 16 fallout, none of which had surfaced in the build log yet:**
+
+- `next lint` was removed. `npm run lint` was silently broken; it is now `eslint .`, with
+  `eslint-config-next` bumped 15.3.3 → 16 and `eslint.config.mjs` rewritten to that package's
+  native flat config (the `FlatCompat` shim is gone). `next lint`'s implicit ignores had to be
+  declared by hand.
+- `middleware.ts` → **`proxy.ts`** (deprecated filename). Contents unchanged; verified the build
+  still reports `ƒ Proxy (Middleware)` and that auth still holds.
+- Next rewrote `tsconfig.json` (`jsx: preserve` → `react-jsx`, plus `.next/dev/types`). Mandatory.
+- eslint-config-next 16 enables `react-hooks/set-state-in-effect`, which flagged 5 pre-existing
+  spots. Fixed properly rather than suppressed: the dialog re-seed became a `key` remount; the
+  theme toggle picks its icon in CSS (which also removes the wrong-icon flash the mount guard
+  caused); and the three "reset then fetch" hooks now reset **during render** via a request-key
+  comparison — React's documented "adjusting state when a prop changes" pattern, which avoids
+  committing the stale frame at all.
+
+**Also removed the deprecated `createRouteMatcher`** from `proxy.ts` — see Conventions. Behaviour is
+unchanged because each protected route already did its own check; re-verified after the change.
+
+**Verified:** `grep -rn "SignedIn\|SignedOut\|Protect" src/` is clean; `npm run build` passes with
+`/` prerendered and `ƒ Proxy (Middleware)` present; `npm run lint` exits 0; a *genuinely* fresh dev
+boot serves requests with no deprecation warnings; signed out, `/api/stocks` and `/api/forecast`
+return 200 while `GET`/`POST /api/balance` and `POST /api/recommendation` return JSON 401; and the
+signed-out page renders charts, the header Sign in button (the `Show` fallback) and the "Sign in to
+generate a recommendation" card (`when="signed-out"`).
+
+**Still not verified end-to-end:** the live Claude call — no `ANTHROPIC_API_KEY` in this environment.
+
+<!-- BEGIN:nextjs-agent-rules -->
+
+# This is NOT the Next.js you know
+
+This version has breaking changes — APIs, conventions, and file structure may all differ from your training data. Read the relevant guide in `node_modules/next/dist/docs/` (resolved from this file's directory; in monorepos the `next` package may not be visible from the repo root) before writing any code. Heed deprecation notices.
+
+This block is written and re-added by `next dev` — verify at `node_modules/next/dist/server/lib/generate-agent-files.js`. Removing it from a diff only re-creates the uncommitted change; committing it with your work keeps the tree clean.
+
+<!-- END:nextjs-agent-rules -->

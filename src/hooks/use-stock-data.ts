@@ -39,16 +39,25 @@ export function useStockData(symbol: string, timeframe: Timeframe): StockDataSta
 
   const reload = React.useCallback(() => setNonce((value) => value + 1), []);
 
+  // Clear the previous ticker's data *during render* rather than in the effect below.
+  // React's documented "adjusting state when a prop changes" pattern: it re-renders
+  // immediately without committing the stale frame, so the old ticker's chart is never
+  // shown under the new ticker's heading, and there is no extra committed render.
+  const requestKey = `${symbol}|${timeframe}|${nonce}`;
+  const [activeKey, setActiveKey] = React.useState(requestKey);
+  if (activeKey !== requestKey) {
+    setActiveKey(requestKey);
+    setSeries(null);
+    setForecast(null);
+    setForecastError(null);
+    setError(null);
+    setLoading(true);
+  }
+
   React.useEffect(() => {
     if (!symbol || !timeframe) return;
 
     const controller = new AbortController();
-
-    setLoading(true);
-    setError(null);
-    setForecastError(null);
-    setSeries(null);
-    setForecast(null);
 
     (async () => {
       try {

@@ -1,12 +1,7 @@
 "use client";
 
 import * as React from "react";
-import {
-  SignedIn,
-  SignedOut,
-  SignInButton,
-  UserButton,
-} from "@clerk/nextjs";
+import { Show, SignInButton, UserButton } from "@clerk/nextjs";
 import { useTheme } from "next-themes";
 import { Moon, Settings2, Sun, Wallet } from "lucide-react";
 
@@ -33,12 +28,9 @@ function BalanceDialog({
   onOpenChange: (open: boolean) => void;
 }) {
   const { balance, saving, setBalance } = useBalance();
+  // Seeded once per mount; the caller remounts this via `key` when the dialog opens or
+  // the stored balance changes, which is cheaper than syncing it back in an effect.
   const [draft, setDraft] = React.useState(String(balance));
-
-  // Re-seed the field from the stored value each time the dialog opens.
-  React.useEffect(() => {
-    if (open) setDraft(String(balance));
-  }, [open, balance]);
 
   const parsed = Number(draft);
   const valid = Number.isFinite(parsed) && parsed >= 0;
@@ -96,10 +88,6 @@ function BalanceDialog({
 
 function ThemeToggle() {
   const { resolvedTheme, setTheme } = useTheme();
-  const [mounted, setMounted] = React.useState(false);
-
-  // The resolved theme is unknown during SSR; render a stable placeholder.
-  React.useEffect(() => setMounted(true), []);
 
   return (
     <Button
@@ -108,7 +96,10 @@ function ThemeToggle() {
       aria-label="Toggle theme"
       onClick={() => setTheme(resolvedTheme === "dark" ? "light" : "dark")}
     >
-      {mounted && resolvedTheme === "dark" ? <Sun /> : <Moon />}
+      {/* Chosen by CSS, not by a mount flag: next-themes stamps the `dark` class before
+          hydration, so the right icon paints immediately and no effect is needed. */}
+      <Sun className="hidden dark:block" />
+      <Moon className="block dark:hidden" />
     </Button>
   );
 }
@@ -129,6 +120,7 @@ function BalanceButton({ onOpen }: { onOpen: () => void }) {
 
 export function AppHeader() {
   const [dialogOpen, setDialogOpen] = React.useState(false);
+  const { balance } = useBalance();
 
   return (
     <header className="bg-background/80 sticky top-0 z-50 border-b backdrop-blur-sm">
@@ -141,22 +133,29 @@ export function AppHeader() {
         </div>
 
         <div className="ml-auto flex items-center gap-2">
-          <SignedIn>
+          <Show when="signed-in">
             <BalanceButton onOpen={() => setDialogOpen(true)} />
-          </SignedIn>
+          </Show>
           <ThemeToggle />
-          <SignedOut>
-            <SignInButton mode="modal">
-              <Button size="sm">Sign in</Button>
-            </SignInButton>
-          </SignedOut>
-          <SignedIn>
+          {/* One check instead of two: the signed-out branch is the fallback. */}
+          <Show
+            when="signed-in"
+            fallback={
+              <SignInButton mode="modal">
+                <Button size="sm">Sign in</Button>
+              </SignInButton>
+            }
+          >
             <UserButton />
-          </SignedIn>
+          </Show>
         </div>
       </div>
 
-      <BalanceDialog open={dialogOpen} onOpenChange={setDialogOpen} />
+      <BalanceDialog
+        key={`${dialogOpen}:${balance}`}
+        open={dialogOpen}
+        onOpenChange={setDialogOpen}
+      />
     </header>
   );
 }

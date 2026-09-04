@@ -137,13 +137,22 @@ export function AiRecommendation({
   const [error, setError] = React.useState<string | null>(null);
   const [nonce, setNonce] = React.useState(0);
 
+  // Same render-time reset as `useStockData`: drop the previous ticker's recommendation
+  // before paint, so NVDA's outlook is never shown under AAPL's heading while the new
+  // request is in flight. The key mirrors the effect's dependencies exactly.
+  const requestKey = `${ready}|${symbol}|${timeframe}|${balance}|${meta?.endPrice}|${forecast?.expectedReturnPct}|${nonce}`;
+  const [activeKey, setActiveKey] = React.useState<string | null>(null);
+  if (activeKey !== requestKey) {
+    setActiveKey(requestKey);
+    setData(null);
+    setError(null);
+    setLoading(ready && !!meta);
+  }
+
   React.useEffect(() => {
     if (!ready || !meta) return;
 
     const controller = new AbortController();
-    setLoading(true);
-    setError(null);
-    setData(null);
 
     const horizonDays = forecast?.horizonDays ?? 30;
     const body = {

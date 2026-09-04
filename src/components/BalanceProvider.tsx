@@ -28,17 +28,28 @@ export function BalanceProvider({ children }: { children: React.ReactNode }) {
   const [saving, setSaving] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
-  React.useEffect(() => {
-    if (!isLoaded) return;
-
-    if (!isSignedIn) {
+  // Reset during render when the auth state flips, for the same reason as in
+  // `useStockData`: one user's balance must never paint under another's session.
+  // Seeded to null, not to the first key: if Clerk is already loaded on the very first
+  // render there is no transition to observe, and `loading` would otherwise stick at its
+  // initial `true` forever.
+  const authKey = `${isLoaded}|${isSignedIn}`;
+  const [activeAuthKey, setActiveAuthKey] = React.useState<string | null>(null);
+  if (activeAuthKey !== authKey) {
+    setActiveAuthKey(authKey);
+    setError(null);
+    if (isLoaded && !isSignedIn) {
       setBalanceState(DEFAULT_BALANCE);
       setLoading(false);
-      return;
+    } else if (isLoaded) {
+      setLoading(true);
     }
+  }
+
+  React.useEffect(() => {
+    if (!isLoaded || !isSignedIn) return;
 
     const controller = new AbortController();
-    setLoading(true);
 
     (async () => {
       try {
