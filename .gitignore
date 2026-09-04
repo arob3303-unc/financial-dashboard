@@ -45,3 +45,6 @@ next-env.d.ts
 
 # for flask-api
 .venv
+
+__pycache__/
+*.py[cod]

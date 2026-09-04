@@ -1,31 +1,66 @@
-# Extro – Financial Dashboard
+# Extro — Financial Dashboard
 
-A **full-stack web application** where users can log in and simulate long-term financial growth using fictional balances.  
-This project demonstrates skills in **frontend development (Next.js)**, **backend/API design (Flask + SQL)**, and **custom authentication** with MySQL.  
+A full-stack **fictional stock forecaster**. Sign in, set a make-believe balance, pick a ticker and a
+time window, and Extro shows the real price history, a projected forecast band, what your balance would
+have done, and an AI-written outlook on the name.
 
----
+- **Frontend** — Next.js 15 (App Router) + React 19 + Tailwind v4 + shadcn/ui + Recharts
+- **Backend** — Flask + yfinance + NumPy (price history and the drift/volatility projection)
+- **Auth** — Clerk (the simulated balance is stored in the user's Clerk `publicMetadata`)
+- **AI** — Claude (`claude-opus-5`) via a server-side Next.js route handler
 
-## 📖 Overview  
-Extro is a fictional stock market forecaster and dashboard tool. Users create accounts, input balances, and simulate financial growth over time. The system persists data securely with MySQL and offers a clean, interactive UI to visualize growth scenarios.  
+> Prices are real market data. Balances, profits and projections are simulated. Nothing here is
+> financial advice.
 
-- **Frontend**: Next.js (React framework)  
-- **Backend**: Flask RESTful API  
-- **Database**: MySQL (persistent storage for user data & authentication)  
-- **Authentication**: Custom login/logout system  
-- **Deployment**: Cloud-ready setup for scalability  
+## Features
 
----
+- **Price charts** — historical closes with a gradient area fill, a dashed forward projection, and a
+  ±1σ confidence band, in a colorblind-safe palette validated for both light and dark themes.
+- **Forecast** — drift and volatility are estimated from the window's log returns and extrapolated
+  forward as a geometric Brownian motion path with a one-standard-deviation band.
+- **KPI row** — current price, realized return on your balance, projected value, projected profit.
+- **AI outlook** — Claude reads the price action, the projection and global market trends (AI and
+  datacenter demand for chip and memory names, hyperscaler capex, the power constraint, rate
+  sensitivity) and returns a structured stance, thesis, drivers, risks and a profit band.
+- **Ticker comparison** — two charts side by side over the same window.
+- **Dark and light themes.**
 
-## Features  
-- **User Accounts & Authentication** → Custom login/logout with credentials stored securely in MySQL.  
-- **Simulated Balances** → Users can track fictional financial growth and forecasts.  
-- **Data Persistence** → REST API with SQL backend ensures reliable data storage.  
-- **Interactive Dashboard** → Visual display of balances and growth using Next.js.  
-- **Cloud-Ready Architecture** → Decoupled frontend and backend for easy scaling.  
+## Running it
 
----
+```bash
+npm install
+../.venv/Scripts/python -m pip install -r src/flask-api/requirements.txt
 
-## Screenshots
-<img width="875" height="650" alt="fiweb" src="https://github.com/user-attachments/assets/906212c1-fb32-4ceb-ae16-acd9cf1da0ae" />
+npm run dev:all      # Next.js on :3000 and Flask on :5000
+```
 
-- It is a work in progress - The profit is based on a $5,000 initial investment, and will soon be updated for a user value of any amount.
+`npm run dev` and `npm run dev:api` start each half on its own.
+
+### Environment
+
+Create `.env.local`:
+
+```
+NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=...
+CLERK_SECRET_KEY=...
+ANTHROPIC_API_KEY=...
+# Optional; defaults to http://127.0.0.1:5000
+NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:5000
+```
+
+## Layout
+
+```
+src/
+├── app/
+│   ├── api/balance/          GET + POST the simulated balance (Clerk publicMetadata)
+│   ├── api/recommendation/   Claude-powered stock outlook
+│   ├── layout.tsx page.tsx globals.css
+├── components/               StockChart, AiRecommendation, StatCard, AppHeader
+│   └── ui/                   shadcn/ui primitives
+├── hooks/use-stock-data.ts   Loads price history + forecast for one ticker
+├── lib/api.ts                Typed, shape-validating client for the Flask API
+└── flask-api/stockdata.py    The price + forecast API
+```
+
+See `CLAUDE.md` for the API contract and project conventions.

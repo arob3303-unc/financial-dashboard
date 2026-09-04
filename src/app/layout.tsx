@@ -1,38 +1,48 @@
-import './globals.css';
-import { ClerkProvider, SignedIn, SignedOut, SignInButton, UserButton } from '@clerk/nextjs';
-import Navbar from './Navbar';
+import type { Metadata } from "next";
+import { ClerkProvider } from "@clerk/nextjs";
+import { Geist, Geist_Mono } from "next/font/google";
+import { ThemeProvider } from "next-themes";
 
-export const metadata = {
-  title: 'Financial Dashboard',
-  description: 'Manage your stocks and options',
+import { AppHeader } from "@/components/AppHeader";
+import { BalanceProvider } from "@/components/BalanceProvider";
+import { cn } from "@/lib/utils";
+import "./globals.css";
+
+const geistSans = Geist({ subsets: ["latin"], variable: "--font-sans" });
+const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-mono" });
+
+export const metadata: Metadata = {
+  title: "Extro — Stock Forecaster",
+  description:
+    "A fictional stock forecaster: price history, projected returns, and an AI outlook on any ticker.",
 };
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default function RootLayout({
+  children,
+}: {
+  children: React.ReactNode;
+}) {
   return (
     <ClerkProvider>
-      <html lang="en">
-        <body>
-          <header className="navbar">
-            <div className="navbar-content">
-              <div className='navbar-left'>
-                <div className='settings-icon'><Navbar /></div>
-              </div>
-              <div className="navbar-middle">Extro</div>
-              <div className="navbar-right">
-                    <SignedOut>
-                      <SignInButton>
-                        <button className="auth-button signup-button">Sign In</button>
-                      </SignInButton>
-                    </SignedOut>
-                  <div>
-                    <SignedIn>
-                      <UserButton />
-                    </SignedIn>
-                  </div>
-              </div>
-            </div>
-          </header>
-            {children}
+      <html lang="en" suppressHydrationWarning>
+        <body
+          className={cn(
+            "min-h-svh font-sans antialiased",
+            geistSans.variable,
+            geistMono.variable,
+          )}
+        >
+          <ThemeProvider
+            attribute="class"
+            defaultTheme="dark"
+            enableSystem
+            disableTransitionOnChange
+          >
+            <BalanceProvider>
+              <AppHeader />
+              <main>{children}</main>
+            </BalanceProvider>
+          </ThemeProvider>
         </body>
       </html>
     </ClerkProvider>

@@ -1,97 +1,275 @@
-'use client';
-import ChartComponent from "./ChartComponent";
-import LLMTextBox from "./LLMTextBox"
-import React, { useEffect, useState } from 'react';
+"use client";
 
-const availableTickers = ["AAPL", "MSFT", "TSLA", "GOOGL", "AMZN", "AMD", "ZM", "SPY", "VOO", "NVDA"];
-const availableTimes = ["1 Month", "3 Months", "6 Months", "1 Year", "3 Years", "5 Years"]
+import * as React from "react";
+import { SignedIn, SignedOut, SignInButton } from "@clerk/nextjs";
+import { Info } from "lucide-react";
 
-function sleep(ms: number) {
-  return new Promise(resolve => setTimeout(resolve, ms));
+import { AiRecommendation } from "@/components/AiRecommendation";
+import { StatCard } from "@/components/StatCard";
+import {
+  StockChart,
+  StockChartError,
+  StockChartSkeleton,
+  type ChartSlot,
+} from "@/components/StockChart";
+import { useBalance } from "@/components/BalanceProvider";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Label } from "@/components/ui/label";
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from "@/components/ui/select";
+import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { useStockData } from "@/hooks/use-stock-data";
+import {
+  formatCurrency,
+  formatPercent,
+  TICKERS,
+  TIMEFRAMES,
+  type Timeframe,
+} from "@/lib/api";
+
+function TickerSelect({
+  label,
+  value,
+  onChange,
+  slot,
+}: {
+  label: string;
+  value: string;
+  onChange: (value: string) => void;
+  slot: ChartSlot;
+}) {
+  return (
+    <div className="grid gap-1.5">
+      <Label className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
+        {label}
+      </Label>
+      <Select value={value} onValueChange={onChange}>
+        <SelectTrigger className="w-[9.5rem]">
+          <span
+            className="size-2.5 shrink-0 rounded-[2px]"
+            style={{ backgroundColor: `var(--${slot})` }}
+            aria-hidden
+          />
+          <SelectValue />
+        </SelectTrigger>
+        <SelectContent>
+          {TICKERS.map((ticker) => (
+            <SelectItem key={ticker} value={ticker}>
+              {ticker}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+    </div>
+  );
+}
+
+/** One chart card: its own loading, error and empty states, independent of its sibling. */
+function ChartPanel({
+  symbol,
+  timeframe,
+  slot,
+}: {
+  symbol: string;
+  timeframe: Timeframe;
+  slot: ChartSlot;
+}) {
+  const { series, forecast, forecastError, loading, error, reload } = useStockData(
+    symbol,
+    timeframe,
+  );
+
+  return (
+    <Card className="min-w-0">
+      <CardContent className="min-w-0">
+        {loading && <StockChartSkeleton />}
+
+        {!loading && error && <StockChartError message={error} onRetry={reload} />}
+
+        {!loading && !error && series && series.points.length === 0 && (
+          <div className="text-muted-foreground flex h-[22rem] flex-col items-center justify-center gap-2 text-sm">
+            <Info className="size-5" aria-hidden />
+            <span>No price data for {symbol} over {timeframe.toLowerCase()}.</span>
+            <Button size="sm" variant="outline" onClick={reload}>
+              Retry
+            </Button>
+          </div>
+        )}
+
+        {!loading && !error && series && series.points.length > 0 && (
+          <>
+            <StockChart
+              series={series}
+              forecast={forecast}
+              timeframe={timeframe}
+              slot={slot}
+            />
+            {forecastError && (
+              <p className="text-muted-foreground mt-3 text-xs">
+                Projection unavailable: {forecastError}
+              </p>
+            )}
+          </>
+        )}
+      </CardContent>
+    </Card>
+  );
 }
 
 export default function Home() {
-  const [selectedTicker1, setSelectedTicker1] = useState("AAPL");
-  const [selectedTicker2, setSelectedTicker2] = useState("NVDA");
-  const [selectedTime, setSelectedTime] = useState("1 Month");
+  const [primary, setPrimary] = React.useState("NVDA");
+  const [comparison, setComparison] = React.useState("AAPL");
+  const [timeframe, setTimeframe] = React.useState<Timeframe>("1 Year");
 
-  const [showSecondChart, setShowSecondChart] = useState(false);
+  const { balance } = useBalance();
 
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [ticker1Data, setTicker1Data] = useState<{ start: string; end: string; profit: number } | null>(null);
-  // eslint-disable-next-line @typescript-eslint/no-unused-vars
-  const [ticker2Data, setTicker2Data] = useState<{ start: string; end: string; profit: number } | null>(null);
+  // The KPI row and the AI panel both reason about the primary ticker, so they
+  // share one fetch rather than each starting their own.
+  const primaryData = useStockData(primary, timeframe);
+  const meta = primaryData.series?.meta ?? null;
+  const forecast = primaryData.forecast;
 
-  // Whenever selectedTicker2 or selectedTime changes, delay showing 2nd chart
-  useEffect(() => {
-    setShowSecondChart(false); // hide second chart first
-    
-    async function delayedShow() {
-      await sleep(0); // 500ms delay
-      setShowSecondChart(true); // then show second chart
-    }
-
-    delayedShow();
-
-  }, [selectedTicker2, selectedTime]);
+  const realizedProfit = meta ? (balance * meta.changePct) / 100 : null;
+  const projectedProfit = forecast
+    ? (balance * forecast.expectedReturnPct) / 100
+    : null;
 
   return (
-    <div className="graph-main">
-      <div className="menu-space">
-        {/* ... user selects here ... */}
-        <div className="ticker">
-          <select
-            value={selectedTicker1}
-            onChange={(e) => setSelectedTicker1(e.target.value)}
-            className="ticker-menu"
-          >
-            {availableTickers.map((ticker) => (
-              <option key={ticker} value={ticker}>{ticker}</option>
-            ))}
-          </select>
+    <div className="mx-auto min-w-0 max-w-7xl space-y-6 px-4 py-6 sm:px-6 sm:py-8">
+      <div className="flex flex-wrap items-end justify-between gap-4">
+        <div>
+          <h1 className="text-2xl font-semibold tracking-tight">Forecast</h1>
+          <p className="text-muted-foreground text-sm">
+            Real prices, simulated money. Pick a ticker and a window to see what
+            {" "}{formatCurrency(balance, 0)} would have done — and where the trend points.
+          </p>
         </div>
-        <div className="ticker">
-          <select
-            value={selectedTime}
-            onChange={(e) => setSelectedTime(e.target.value)}
-            className="ticker-menu"
-          >
-            {availableTimes.map((time) => (
-              <option key={time} value={time}>{time}</option>
-            ))}
-          </select>
-        </div>
-        <div className="ticker">
-          <select
-            value={selectedTicker2}
-            onChange={(e) => setSelectedTicker2(e.target.value)}
-            className="ticker-menu"
-          >
-            {availableTickers.map((ticker) => (
-              <option key={ticker} value={ticker}>{ticker}</option>
-            ))}
-          </select>
+
+        <div className="flex flex-wrap items-end gap-3">
+          <TickerSelect
+            label="Ticker"
+            value={primary}
+            onChange={setPrimary}
+            slot="chart-1"
+          />
+          <TickerSelect
+            label="Compare with"
+            value={comparison}
+            onChange={setComparison}
+            slot="chart-2"
+          />
         </div>
       </div>
 
-      <div className="graphs">
-        <ChartComponent symbol={selectedTicker1} time={selectedTime} onDataLoaded={(data) => setTicker1Data(data)} />
-        {showSecondChart && <ChartComponent symbol={selectedTicker2} time={selectedTime} onDataLoaded={(data) => setTicker2Data(data)} />}
+      {/* The six timeframes are wider than a phone. Let the strip scroll inside
+          itself rather than pushing the page into a horizontal scroll. */}
+      <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+        <Tabs
+          value={timeframe}
+          onValueChange={(value) => setTimeframe(value as Timeframe)}
+        >
+          <TabsList className="w-max">
+            {TIMEFRAMES.map((option) => (
+              <TabsTrigger key={option} value={option}>
+                {option}
+              </TabsTrigger>
+            ))}
+          </TabsList>
+        </Tabs>
       </div>
-      
-      <div className="Prompt-Box">
-        {ticker1Data && ticker2Data && (
-        <LLMTextBox
-          ticker1={selectedTicker1}
-          ticker2={selectedTicker2}
-          selectedTime={selectedTime}
-          profit1={ticker1Data.profit}
-          profit2={ticker2Data.profit}
-          start={ticker1Data.start}
-          end={ticker1Data.end}
+
+      <section
+        className="grid min-w-0 gap-4 sm:grid-cols-2 lg:grid-cols-4"
+        aria-label={`${primary} summary`}
+      >
+        <StatCard
+          label={`${primary} price`}
+          value={meta ? formatCurrency(meta.endPrice) : "—"}
+          delta={meta?.changePct}
+          caption={`over ${timeframe.toLowerCase()}`}
+          loading={primaryData.loading}
         />
-      )}
-      </div>
+        <StatCard
+          label="Realized on your balance"
+          value={realizedProfit === null ? "—" : formatCurrency(realizedProfit)}
+          caption={`if you had held ${formatCurrency(balance, 0)}`}
+          loading={primaryData.loading}
+        />
+        <StatCard
+          label="Projected value"
+          value={
+            forecast
+              ? formatCurrency(
+                  forecast.points[forecast.points.length - 1].projected,
+                )
+              : "—"
+          }
+          delta={forecast?.expectedReturnPct}
+          caption={forecast ? `in ${forecast.horizonDays} trading days` : "—"}
+          loading={primaryData.loading}
+        />
+        <StatCard
+          label="Projected profit"
+          value={projectedProfit === null ? "—" : formatCurrency(projectedProfit)}
+          caption={
+            forecast
+              ? `${formatPercent(forecast.expectedReturnPct)} of ${formatCurrency(balance, 0)}`
+              : "—"
+          }
+          loading={primaryData.loading}
+        />
+      </section>
+
+      <section className="grid min-w-0 gap-4 xl:grid-cols-2" aria-label="Price charts">
+        <ChartPanel symbol={primary} timeframe={timeframe} slot="chart-1" />
+        <ChartPanel symbol={comparison} timeframe={timeframe} slot="chart-2" />
+      </section>
+
+      <SignedIn>
+        <AiRecommendation
+          symbol={primary}
+          timeframe={timeframe}
+          balance={balance}
+          meta={meta}
+          forecast={forecast}
+          ready={!primaryData.loading && !!meta}
+        />
+      </SignedIn>
+
+      <SignedOut>
+        <Card>
+          <CardHeader>
+            <CardTitle>AI outlook</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <Alert>
+              <Info />
+              <AlertTitle>Sign in to generate a recommendation</AlertTitle>
+              <AlertDescription className="gap-3">
+                <span>
+                  Claude reads the price action, the projection, and current market
+                  trends to explain what the scenario implies.
+                </span>
+                <SignInButton mode="modal">
+                  <Button size="sm">Sign in</Button>
+                </SignInButton>
+              </AlertDescription>
+            </Alert>
+          </CardContent>
+        </Card>
+      </SignedOut>
+
+      <p className="text-muted-foreground text-xs">
+        Extro is a simulation. Prices are real market data; balances, profits and
+        projections are fictional and are not financial advice.
+      </p>
     </div>
   );
 }
