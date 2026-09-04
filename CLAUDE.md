@@ -14,42 +14,64 @@ and forecasts are simulated for demonstration.
 ## Architecture
 
 ```
-G:\code_projects\Financial Dashboard\
-├── .venv\                        Python 3.11 venv (OUTSIDE the repo, gitignored)
-└── financial-dashboard\          <- the git repo / npm project
-    ├── src\
-    │   ├── middleware.ts         Clerk middleware; protects /api/*
-    │   ├── app\                  Next.js 15 App Router
-    │   │   ├── layout.tsx        ClerkProvider + app shell header
-    │   │   ├── page.tsx          The dashboard
-    │   │   ├── globals.css       Tailwind v4 + shadcn theme tokens
-    │   │   └── api\              Next.js route handlers (server-only secrets live here)
-    │   │       ├── balance\      GET/POST user balance (stored in Clerk publicMetadata)
-    │   │       └── recommendation\  Claude-powered stock recommendation
-    │   ├── components\           Feature components (StockChart, AiRecommendation, ...)
-    │   │   └── ui\               shadcn/ui primitives — generated, avoid hand-editing
-    │   ├── lib\                  api.ts (typed Flask client), utils.ts (cn)
-    │   └── flask-api\
-    │       ├── stockdata.py      The Flask price/forecast API
-    │       └── requirements.txt
-    └── CLAUDE.md                 this file
+financial-dashboard/            <- the git repo / npm project; this is the whole app
+├── src/
+│   ├── middleware.ts           Clerk; protects /api/balance + /api/recommendation only
+│   ├── app/                    Next.js 15 App Router
+│   │   ├── layout.tsx          ClerkProvider + ThemeProvider + app shell header
+│   │   ├── page.tsx            The dashboard
+│   │   ├── globals.css         Tailwind v4 + shadcn theme tokens + chart palette
+│   │   └── api/
+│   │       ├── stocks/[symbol]/     price history        (public)
+│   │       ├── forecast/[symbol]/   drift/vol projection (public)
+│   │       ├── balance/             GET/POST balance     (auth)
+│   │       └── recommendation/      Claude outlook       (auth)
+│   ├── components/             StockChart, AiRecommendation, StatCard, AppHeader
+│   │   └── ui/                 shadcn/ui primitives — generated, avoid hand-editing
+│   ├── hooks/use-stock-data.ts Loads price history + forecast for one ticker
+│   └── lib/
+│       ├── market.ts           Timeframes, summarize(), project() — pure, isomorphic
+│       ├── quotes.ts           Yahoo Finance access (server-only)
+│       ├── api.ts              Typed, shape-validating client for /api/*
+│       └── utils.ts            cn()
+└── CLAUDE.md                   this file
 ```
 
-Two processes: **Next.js on :3000** and **Flask on :5000**. The Flask API is the source of price history and
-the forecast projection. Anything requiring a secret key (Claude, Clerk server calls) lives in a Next.js
-route handler, never in the browser and never in Flask.
+**One process.** Everything is the Next.js app; there is no separate backend to start.
+Price data comes from Yahoo Finance through the `yahoo-finance2` package, called from
+`src/lib/quotes.ts` inside the route handlers — never from the browser, so there is no
+CORS and no API base URL to configure. Anything needing a secret (Claude, Clerk server
+calls) lives in a route handler.
+
+> There used to be a Flask API at `src/flask-api/stockdata.py`. It was ported to
+> `src/lib/market.ts` plus the two route handlers so the app deploys to Vercel as a single
+> unit. The TypeScript port reproduces the NumPy original exactly — verified by running
+> both over an identical series and diffing every meta field, every forecast scalar, and
+> all 60 projected points. The Python remains in git history at `d8706f8`.
+
+## Deploying to Vercel
+
+Set these in **Settings → Environment Variables** (Production, Preview, Development):
+`NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY`, `CLERK_SECRET_KEY`, `ANTHROPIC_API_KEY`.
+
+**The Clerk publishable key is needed at *build* time, not just runtime.** `/` is statically
+prerendered, `<ClerkProvider>` renders during that prerender, and `@clerk/nextjs` resolves
+the key as `process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || ""` then throws
+`Missing publishableKey`. Locally you never hit this because Clerk v6 has a
+development-only "keyless" fallback that auto-provisions a key; production builds have no
+such fallback. A deploy failing with `Error occurred prerendering page "/"` is this.
+Vercel does not rebuild when you add variables — redeploy with the build cache off.
+
+Use the `pk_live_…` / `sk_live_…` pair for Production and add the deployment domain in the
+Clerk dashboard; `pk_test_…` will build but sign-in will misbehave.
 
 ## Commands
 
 ```bash
-npm run dev       # Next.js only (:3000)
-npm run dev:api   # Flask only (:5000), using the venv one directory up
-npm run dev:all   # both, via concurrently  <- use this
+npm run dev       # everything, on :3000
 npm run build     # production build; must pass before committing
 npm run lint
 ```
-
-Python deps: `../.venv/Scripts/python -m pip install -r src/flask-api/requirements.txt`
 
 ## Environment variables
 
@@ -60,11 +82,13 @@ Python deps: `../.venv/Scripts/python -m pip install -r src/flask-api/requiremen
 | `NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY` | Clerk, browser-side |
 | `CLERK_SECRET_KEY` | Clerk, server-side |
 | `ANTHROPIC_API_KEY` | Claude API, used only by `src/app/api/recommendation` |
-| `NEXT_PUBLIC_API_BASE_URL` | Flask base URL; defaults to `http://127.0.0.1:5000` |
 
-`src/flask-api/.env` holds `OPENAI_API_KEY`, left over from the original `/explain` endpoint.
+There is deliberately **no** `NEXT_PUBLIC_API_BASE_URL`. It used to default to
+`http://127.0.0.1:5000`, and because `NEXT_PUBLIC_*` values are inlined into the browser
+bundle at build time, a deploy that forgot to set it shipped a site telling every
+visitor's browser to call its own machine on port 5000. The API is same-origin now.
 
-## API contract (Next.js -> Flask)
+## API contract (internal, same-origin)
 
 `GET /api/stocks/<symbol>?time=<label>` where `<label>` is one of
 `1 Month | 3 Months | 6 Months | 1 Year | 3 Years | 5 Years`:
@@ -89,19 +113,28 @@ Python deps: `../.venv/Scripts/python -m pip install -r src/flask-api/requiremen
 }
 ```
 
-Every response is an **object**, never a bare array, and never contains `NaN`/`Infinity`
-(`app.json.allow_nan = False` makes a bad value a loud 500 instead of a corrupt 200).
+Every response is an **object**, never a bare array, and never carries a non-finite price:
+`loadCloses()` drops null/NaN closes before anything downstream sees them.
 
-Errors: `{"error": "..."}` with a 4xx/5xx status.
+Errors: `{"error": "..."}` with a 4xx/5xx status. Successful responses carry
+`Cache-Control: s-maxage=300, stale-while-revalidate=600` — Yahoo rate-limits by IP and
+every visitor to a Vercel deployment shares the same egress addresses, so edge caching is
+what stops a popular ticker becoming one upstream call per page view.
+
+`/api/stocks` and `/api/forecast` are **public**; `/api/balance` and `/api/recommendation`
+require a signed-in user. The dashboard shows charts to signed-out visitors, so gating all
+of `/api/*` would break them.
 
 ## Conventions
 
 - **Imports use the `@/` alias** (`@/components/...`, `@/lib/api`), configured in `tsconfig.json`.
 - `src/components/ui/*` is generated by `npx shadcn@latest add <name>` — regenerate rather than hand-edit.
-- **Never hand Recharts an unvalidated value.** All Flask responses go through `src/lib/api.ts`, which
+- **Never hand Recharts an unvalidated value.** All API responses go through `src/lib/api.ts`, which
   validates shape and throws `ApiError` otherwise. See the work log entry for 2026-09-04.
 - Chart colors come from the `ChartConfig` / CSS variables so they work in both themes; don't hardcode hex.
 - Tailwind v4: `globals.css` uses `@import "tailwindcss"`, **not** the v3 `@tailwind` directives.
+- Forecast and summary maths lives in `src/lib/market.ts` and is pure — no Node or browser
+  APIs — so the routes and the client share it and it can be exercised directly.
 - Claude API calls use `claude-opus-5` with `thinking: {type: "adaptive"}`. `budget_tokens` is rejected
   with a 400 on this model.
 
@@ -197,3 +230,59 @@ error state (Flask stopped) shows an Alert with Retry instead of crashing; unaut
 **Not verified end-to-end:** the live Claude call. No `ANTHROPIC_API_KEY` was available in
 this environment, and `yfinance` could not reach Yahoo (TLS trust failure in this shell), so
 the charts were exercised against the real Flask code path with `yf.download` stubbed.
+
+### 2026-09-04 (later) — Vercel deployment: Clerk build key + Flask ported to route handlers
+
+**The deploy failure was `Missing publishableKey`, at build time.** Reproduced locally with
+`NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY="" npm run build`:
+
+```
+Error occurred prerendering page "/". 
+Error: @clerk/nextjs: Missing publishableKey.
+Export encountered an error on /page: /, exiting the build.
+```
+
+No environment variables were set in the Vercel project. `/` is statically prerendered, so
+`<ClerkProvider>` runs during the build; `@clerk/nextjs` reads
+`process.env.NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY || ""` and `assertKey` throws on empty. It
+never reproduces locally because Clerk v6 auto-provisions a "keyless" dev key — a
+development-only path with no production equivalent. Fix is configuration, not code: see
+**Deploying to Vercel** above.
+
+**Ported the Flask API to Next.js route handlers.** Vercel deploys only the Next.js app, so
+`src/flask-api/stockdata.py` could never have run there — and `src/lib/api.ts` fell back to
+`http://127.0.0.1:5000`, which for a `NEXT_PUBLIC_*` value is inlined into the browser
+bundle at build time. Even with a green build, every visitor's browser would have called
+its own machine on port 5000 and every chart would have shown the error state.
+
+- `src/lib/market.ts` — timeframes, `summarize()` and `project()` ported from NumPy to
+  plain TypeScript. Pure and isomorphic, so the routes and the client share the constants.
+- `src/lib/quotes.ts` — Yahoo access via `yahoo-finance2`, `server-only`. Note v4 **must** be
+  instantiated (`new YahooFinance()`); the v2-style bare default export throws. Null closes
+  (the JS form of the old `NaN` problem) are dropped here. Symbols are validated against a
+  character allowlist — `/api/stocks/..%2Fetc` returns 400, not a path traversal.
+- `src/app/api/stocks/[symbol]/` and `src/app/api/forecast/[symbol]/` — same JSON contract
+  as the Flask endpoints, so the client barely changed.
+- Responses carry `s-maxage=300, stale-while-revalidate=600`. This is not incidental: Yahoo
+  rate-limits by IP and all Vercel traffic shares egress addresses, so without edge caching
+  a popular ticker is one upstream call per page view.
+- `src/lib/api.ts` is same-origin; `API_BASE_URL` and the localhost fallback are **deleted**
+  rather than defaulted, so a misconfigured deploy fails loudly instead of shipping silently.
+- `src/middleware.ts` now protects only `/api/balance` and `/api/recommendation`. Gating all
+  of `/api/*` — as it did — would have 401'd the charts for signed-out visitors, who can see
+  them today.
+- `src/flask-api/`, the `dev:api` / `dev:all` scripts and `concurrently` are removed.
+  `npm run dev` now runs the whole app.
+
+**The port is exact, not approximate.** Both implementations were run over an identical
+260-point series and diffed: every `meta` field, every forecast scalar, and all 60 projected
+points match to the cent, including the business-day date sequence.
+
+**Verified:** clean `npm run build` and `npm run lint`; `?time=` omitted gives 1 month (not
+5 years), `?time=zzz` does not 500, a bogus symbol returns a clean 404, horizon clamps at
+365; `Cache-Control` present; signed out, `/api/stocks` and `/api/forecast` are 200 while
+`/api/balance` and `/api/recommendation` are JSON 401; charts render with live data (NVDA
++34.38% over 1 year); and `grep -r "127.0.0.1:5000" .next/static/` is clean.
+
+**Still not verified end-to-end:** the live Claude call — no `ANTHROPIC_API_KEY` in this
+environment.

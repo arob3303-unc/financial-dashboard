@@ -1,9 +1,9 @@
 /**
- * Typed client for the Flask price/forecast API.
+ * Typed client for the app's own price/forecast routes.
  *
  * Everything the charts render passes through here first. The original crash
  * (`displayedData.map is not a function`) happened because a malformed body was handed
- * straight to Recharts: Flask emitted a bare `NaN`, axios silently swallowed the
+ * straight to Recharts: the API emitted a bare `NaN`, axios silently swallowed the
  * `JSON.parse` failure and returned the raw string, and the component called
  * `setData(res.data)` with no check. Two defences below, both deliberate:
  *
@@ -11,32 +11,29 @@
  *      arriving as a string.
  *   2. Every response is shape-checked before it is returned. Anything unexpected
  *      becomes an `ApiError` the UI can render, never a value a chart tries to map over.
+ *
+ * These are same-origin calls to `/api/*`. There is deliberately no configurable base
+ * URL: the previous `NEXT_PUBLIC_API_BASE_URL ?? "http://127.0.0.1:5000"` fallback was
+ * inlined into the browser bundle at build time, so a deploy that forgot to set it
+ * shipped a site telling every visitor's browser to call its own machine on port 5000.
  */
 import axios, { AxiosError } from "axios";
 
-export const API_BASE_URL =
-  process.env.NEXT_PUBLIC_API_BASE_URL ?? "http://127.0.0.1:5000";
+export {
+  TIMEFRAMES,
+  HORIZON_BY_TIMEFRAME,
+  type Timeframe,
+  type PricePoint,
+  type SeriesMeta,
+  type ForecastPoint,
+} from "@/lib/market";
 
-export const TIMEFRAMES = [
-  "1 Month",
-  "3 Months",
-  "6 Months",
-  "1 Year",
-  "3 Years",
-  "5 Years",
-] as const;
-
-export type Timeframe = (typeof TIMEFRAMES)[number];
-
-/** Forecast horizon in trading days, scaled to the lookback window. */
-export const HORIZON_BY_TIMEFRAME: Record<Timeframe, number> = {
-  "1 Month": 15,
-  "3 Months": 30,
-  "6 Months": 45,
-  "1 Year": 60,
-  "3 Years": 120,
-  "5 Years": 180,
-};
+import type {
+  ForecastPoint,
+  PricePoint,
+  SeriesMeta,
+  Timeframe,
+} from "@/lib/market";
 
 export const TICKERS = [
   "AAPL",
@@ -53,30 +50,11 @@ export const TICKERS = [
   "TSM",
 ] as const;
 
-export type PricePoint = { date: string; price: number };
-
-export type SeriesMeta = {
-  startPrice: number;
-  endPrice: number;
-  changePct: number;
-  high: number;
-  low: number;
-  volatility: number;
-  count: number;
-};
-
 export type StockSeries = {
   symbol: string;
   timeframe: string;
   points: PricePoint[];
   meta: SeriesMeta | null;
-};
-
-export type ForecastPoint = {
-  date: string;
-  projected: number;
-  lower: number;
-  upper: number;
 };
 
 export type Forecast = {
@@ -102,7 +80,6 @@ export class ApiError extends Error {
 }
 
 const http = axios.create({
-  baseURL: API_BASE_URL,
   timeout: 20_000,
   // Do NOT let axios hand back a raw string when the body fails to parse.
   transitional: { silentJSONParsing: false, forcedJSONParsing: true, clarifyTimeoutError: true },
@@ -124,9 +101,7 @@ function describeAxiosError(error: unknown, what: string): ApiError {
       return new ApiError(`${what} timed out. Is the price API still running?`, status);
     }
     if (!error.response) {
-      return new ApiError(
-        `Could not reach the price API at ${API_BASE_URL}. Start it with "npm run dev:api".`,
-      );
+      return new ApiError(`${what} could not reach the server. Check your connection.`);
     }
     if (error.message.includes("JSON")) {
       return new ApiError(`${what} returned a malformed response.`, status);

@@ -4,10 +4,11 @@ A full-stack **fictional stock forecaster**. Sign in, set a make-believe balance
 time window, and Extro shows the real price history, a projected forecast band, what your balance would
 have done, and an AI-written outlook on the name.
 
-- **Frontend** — Next.js 15 (App Router) + React 19 + Tailwind v4 + shadcn/ui + Recharts
-- **Backend** — Flask + yfinance + NumPy (price history and the drift/volatility projection)
+- **Stack** — Next.js 15 (App Router) + React 19 + Tailwind v4 + shadcn/ui + Recharts
+- **Market data** — Yahoo Finance via `yahoo-finance2`, called from server route handlers
 - **Auth** — Clerk (the simulated balance is stored in the user's Clerk `publicMetadata`)
 - **AI** — Claude (`claude-opus-5`) via a server-side Next.js route handler
+- **Deploys to Vercel as a single app** — no separate backend process
 
 > Prices are real market data. Balances, profits and projections are simulated. Nothing here is
 > financial advice.
@@ -29,12 +30,8 @@ have done, and an AI-written outlook on the name.
 
 ```bash
 npm install
-../.venv/Scripts/python -m pip install -r src/flask-api/requirements.txt
-
-npm run dev:all      # Next.js on :3000 and Flask on :5000
+npm run dev          # http://localhost:3000
 ```
-
-`npm run dev` and `npm run dev:api` start each half on its own.
 
 ### Environment
 
@@ -44,23 +41,29 @@ Create `.env.local`:
 NEXT_PUBLIC_CLERK_PUBLISHABLE_KEY=...
 CLERK_SECRET_KEY=...
 ANTHROPIC_API_KEY=...
-# Optional; defaults to http://127.0.0.1:5000
-NEXT_PUBLIC_API_BASE_URL=http://127.0.0.1:5000
 ```
+
+Deploying to Vercel? Set the same three in **Settings → Environment Variables**. The Clerk
+publishable key is required at *build* time — the home page is statically prerendered, so a
+missing key fails the build with `Missing publishableKey` rather than only breaking sign-in.
 
 ## Layout
 
 ```
 src/
 ├── app/
-│   ├── api/balance/          GET + POST the simulated balance (Clerk publicMetadata)
-│   ├── api/recommendation/   Claude-powered stock outlook
-│   ├── layout.tsx page.tsx globals.css
+│   ├── api/stocks/[symbol]/       Price history            (public)
+│   ├── api/forecast/[symbol]/     Drift/volatility band    (public)
+│   ├── api/balance/               The simulated balance    (auth)
+│   ├── api/recommendation/        Claude-powered outlook   (auth)
+│   └── layout.tsx page.tsx globals.css
 ├── components/               StockChart, AiRecommendation, StatCard, AppHeader
 │   └── ui/                   shadcn/ui primitives
 ├── hooks/use-stock-data.ts   Loads price history + forecast for one ticker
-├── lib/api.ts                Typed, shape-validating client for the Flask API
-└── flask-api/stockdata.py    The price + forecast API
+└── lib/
+    ├── market.ts             Timeframes, summary stats, the projection
+    ├── quotes.ts             Yahoo Finance access (server-only)
+    └── api.ts                Typed, shape-validating client for /api/*
 ```
 
 See `CLAUDE.md` for the API contract and project conventions.
