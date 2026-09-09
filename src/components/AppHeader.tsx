@@ -135,7 +135,7 @@ export function AppHeader() {
         <Link href="/" className="flex items-baseline gap-2">
           <span className="text-xl font-semibold tracking-tight">Extro</span>
           <span className="text-muted-foreground hidden text-xs sm:inline">
-            stock forecaster
+            learn about risk
           </span>
         </Link>
 

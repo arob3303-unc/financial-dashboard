@@ -7,9 +7,9 @@ import { Card, CardContent } from "@/components/ui/card";
 import { SECTIONS } from "@/lib/nav";
 
 export const metadata: Metadata = {
-  title: "Extro — Learn the risk, take the risk",
+  title: "Extro | Learn about risk.",
   description:
-    "A fictional market simulator for learning to take calculated risk: tail events, options, and long-term compounding on real price data.",
+    "A fictional market simulator for learning to take calculated risk: tail events, options, and compounding over decades on real price data.",
 };
 
 /** The one actionable number on the page, so it gets a visual rather than a sentence. */
@@ -34,7 +34,7 @@ function SplitBar() {
             style={{ backgroundColor: "var(--chart-1)" }}
             aria-hidden
           />
-          <span className="font-medium">60% — live on it</span>
+          <span className="font-medium">60% to live on</span>
         </span>
         <span className="flex items-center gap-1.5">
           <span
@@ -42,7 +42,7 @@ function SplitBar() {
             style={{ backgroundColor: "var(--chart-2)" }}
             aria-hidden
           />
-          <span className="font-medium">40% — invest it</span>
+          <span className="font-medium">40% to invest</span>
         </span>
       </div>
     </div>
@@ -55,7 +55,7 @@ export default function HomePage() {
       {/* Hero */}
       <section>
         <h1 className="text-4xl font-semibold tracking-tight text-balance sm:text-5xl">
-          Learn the risk.
+          Learn risk.
         </h1>
         <p className="text-muted-foreground mt-4 max-w-2xl text-lg text-pretty">
           Extro is a learning platform and a market simulator for people who want to get comfortable with
@@ -80,7 +80,7 @@ export default function HomePage() {
           </p>
           <p>
             The goal is concrete, financial independence inside twenty years! That is not
-            a trading target, it is a savings-rate problem. The lever that matters most is
+            a trading target, it is a savings rate problem. The lever that matters most is
             how much of your income you never spend, which is why the whole site is
             organised around one rule.
           </p>

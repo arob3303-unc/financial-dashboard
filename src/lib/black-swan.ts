@@ -46,10 +46,10 @@ export type PublicChapter = {
 
 export const PASS_MARK = 80;
 
-const PART_ONE = "Part One — Umberto Eco's Antilibrary";
-const PART_TWO = "Part Two — We Just Can't Predict";
-const PART_THREE = "Part Three — Those Gray Swans of Extremistan";
-const PART_FOUR = "Part Four — The End";
+const PART_ONE = "Part One: Umberto Eco's Antilibrary";
+const PART_TWO = "Part Two: We Just Can't Predict";
+const PART_THREE = "Part Three: Those Gray Swans of Extremistan";
+const PART_FOUR = "Part Four: The End";
 
 /*
  * Chapter titles are transcribed from the book. Worth checking against your copy —

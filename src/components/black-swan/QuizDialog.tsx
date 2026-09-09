@@ -115,7 +115,7 @@ export function QuizDialog({
       <DialogContent className="flex max-h-[85vh] flex-col sm:max-w-2xl">
         <DialogHeader>
           <DialogTitle>
-            Chapter {chapter.number} — {chapter.title}
+            Chapter {chapter.number}: {chapter.title}
           </DialogTitle>
           <DialogDescription>
             Question {Math.min(index + 1, total)} of {total}. Your score appears in the

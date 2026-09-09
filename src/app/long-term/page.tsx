@@ -28,7 +28,6 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useStockData } from "@/hooks/use-stock-data";
 import {
   formatCurrency,
-  formatPercent,
   TICKERS,
   TIMEFRAMES,
   type Timeframe,
@@ -71,7 +70,7 @@ function TickerSelect({
   );
 }
 
-/** One chart card: its own loading, error and empty states, independent of its sibling. */
+/** The chart card, with its own loading, error and empty states. */
 function ChartPanel({
   symbol,
   timeframe,
@@ -125,7 +124,6 @@ function ChartPanel({
 
 export default function Home() {
   const [primary, setPrimary] = React.useState("NVDA");
-  const [comparison, setComparison] = React.useState("AAPL");
   const [timeframe, setTimeframe] = React.useState<Timeframe>("1 Year");
 
   const { balance } = useBalance();
@@ -136,10 +134,19 @@ export default function Home() {
   const meta = primaryData.series?.meta ?? null;
   const forecast = primaryData.forecast;
 
-  const realizedProfit = meta ? (balance * meta.changePct) / 100 : null;
-  const projectedProfit = forecast
-    ? (balance * forecast.expectedReturnPct) / 100
-    : null;
+  // Totals, not gains: what the position is worth, having started at `balance`.
+  // The projection compounds on top of today's value rather than on the original
+  // stake, so the four tiles read as one chain: you put in X, it is worth Y now,
+  // and the trend points at Z.
+  const valueToday = meta ? balance * (1 + meta.changePct / 100) : null;
+  const projectedValue =
+    valueToday !== null && forecast
+      ? valueToday * (1 + forecast.expectedReturnPct / 100)
+      : null;
+  const projectedGain =
+    valueToday !== null && projectedValue !== null
+      ? projectedValue - valueToday
+      : null;
 
   return (
     <div className="mx-auto min-w-0 max-w-7xl space-y-6 px-4 py-6 sm:px-6 sm:py-8">
@@ -148,34 +155,28 @@ export default function Home() {
           <h1 className="text-2xl font-semibold tracking-tight">Forecast</h1>
           <p className="text-muted-foreground text-sm">
             Real prices, simulated money. Pick a ticker and a window to see what
-            {" "}{formatCurrency(balance, 0)} would have done — and where the trend points.
+            {" "}{formatCurrency(balance, 0)} would have done, and where the trend points.
           </p>
         </div>
 
-        <div className="flex flex-wrap items-end gap-3">
-          <TickerSelect
-            label="Ticker"
-            value={primary}
-            onChange={setPrimary}
-            slot="chart-1"
-          />
-          <TickerSelect
-            label="Compare with"
-            value={comparison}
-            onChange={setComparison}
-            slot="chart-2"
-          />
-        </div>
+        <TickerSelect
+          label="Ticker"
+          value={primary}
+          onChange={setPrimary}
+          slot="chart-1"
+        />
       </div>
 
-      {/* The six timeframes are wider than a phone. Let the strip scroll inside
-          itself rather than pushing the page into a horizontal scroll. */}
-      <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
+      {/* The six timeframes are wider than a phone, so the strip can still be swiped
+          sideways there rather than pushing the page into a horizontal scroll. The
+          scrollbar itself is hidden; `mx-auto` centres the list whenever it fits, and
+          collapses to zero when it does not, so nothing is clipped off the left. */}
+      <div className="-mx-4 overflow-x-auto px-4 [scrollbar-width:none] sm:mx-0 sm:px-0 [&::-webkit-scrollbar]:hidden">
         <Tabs
           value={timeframe}
           onValueChange={(value) => setTimeframe(value as Timeframe)}
         >
-          <TabsList className="w-max">
+          <TabsList className="mx-auto w-max">
             {TIMEFRAMES.map((option) => (
               <TabsTrigger key={option} value={option}>
                 {option}
@@ -197,13 +198,7 @@ export default function Home() {
           loading={primaryData.loading}
         />
         <StatCard
-          label="Realized on your balance"
-          value={realizedProfit === null ? "—" : formatCurrency(realizedProfit)}
-          caption={`if you had held ${formatCurrency(balance, 0)}`}
-          loading={primaryData.loading}
-        />
-        <StatCard
-          label="Projected value"
+          label={`Projected ${primary} price`}
           value={
             forecast
               ? formatCurrency(
@@ -216,20 +211,27 @@ export default function Home() {
           loading={primaryData.loading}
         />
         <StatCard
-          label="Projected profit"
-          value={projectedProfit === null ? "—" : formatCurrency(projectedProfit)}
+          label="Your value today"
+          value={valueToday === null ? "—" : formatCurrency(valueToday)}
+          delta={meta?.changePct}
+          caption={`from ${formatCurrency(balance, 0)} over ${timeframe.toLowerCase()}`}
+          loading={primaryData.loading}
+        />
+        <StatCard
+          label="Projected value"
+          value={projectedValue === null ? "—" : formatCurrency(projectedValue)}
+          delta={forecast?.expectedReturnPct}
           caption={
-            forecast
-              ? `${formatPercent(forecast.expectedReturnPct)} of ${formatCurrency(balance, 0)}`
+            forecast && projectedGain !== null
+              ? `${formatCurrency(projectedGain)} in ${forecast.horizonDays} trading days`
               : "—"
           }
           loading={primaryData.loading}
         />
       </section>
 
-      <section className="grid min-w-0 gap-4 xl:grid-cols-2" aria-label="Price charts">
+      <section className="min-w-0" aria-label="Price chart">
         <ChartPanel symbol={primary} timeframe={timeframe} slot="chart-1" />
-        <ChartPanel symbol={comparison} timeframe={timeframe} slot="chart-2" />
       </section>
 
       <Show when="signed-in">

@@ -12,7 +12,7 @@ const geistSans = Geist({ subsets: ["latin"], variable: "--font-sans" });
 const geistMono = Geist_Mono({ subsets: ["latin"], variable: "--font-mono" });
 
 export const metadata: Metadata = {
-  title: "Extro — Stock Forecaster",
+  title: "Extro | learn about risk",
   description:
     "A fictional stock forecaster: price history, projected returns, and an AI outlook on any ticker.",
 };

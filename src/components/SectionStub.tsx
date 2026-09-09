@@ -43,7 +43,7 @@ export function SectionStub({
         <CardContent className="flex flex-wrap items-center gap-x-3 gap-y-2">
           <Badge variant="secondary">In progress</Badge>
           <p className="text-muted-foreground text-sm">
-            The full write-up for this section is still being written.
+            Coming soon.
           </p>
         </CardContent>
       </Card>

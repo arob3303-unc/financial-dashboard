@@ -17,7 +17,7 @@ const section = SECTIONS.find((entry) => entry.href === "/black-swan")!;
 const AMAZON_URL = "https://www.amazon.com/dp/081297381X";
 
 export const metadata: Metadata = {
-  title: `${section.title} — Extro`,
+  title: `${section.title} | Extro`,
   description: section.blurb,
 };
 
@@ -50,7 +50,7 @@ export default function BlackSwanPage() {
         <p>
           A black swan is an event with three properties: nobody saw it coming, it changed
           everything, and afterwards everyone explained why it was obvious. Taleb&rsquo;s
-          argument is that these events — not the ordinary ones — decide how history, careers
+          argument is that these events decide how history, careers
           and portfolios actually turn out, and that almost every tool we use to think about
           the future quietly assumes they do not happen.
         </p>
@@ -59,24 +59,23 @@ export default function BlackSwanPage() {
           turkey fed every day for a thousand days has excellent statistical grounds for
           confidence in the farmer, right up to the afternoon before Thanksgiving. We build
           models the same way: fit a curve to what has already happened, extend it forward,
-          and mistake the smoothness of the line for a property of the world rather than a
-          property of the sample.
+          and mistake the smoothness of the line.
         </p>
         <p>
           The reason this belongs on a site about taking risk is that it cuts the opposite
-          way to how it first sounds. Taleb is not arguing for caution — he is arguing that
+          way to how it first sounds. Taleb is not arguing for caution, he is arguing that
           because you cannot predict the extremes, the thing to control is your{" "}
           <em>exposure</em> to them. Arrange your position so that being wrong is survivable
           and being right is unbounded, and uncertainty stops being a reason to stay out. That
           is a far more useful instinct than trying to forecast better, and it is the mindset
-          the rest of Extro is built around.
+          the rest of Extro is built around!
         </p>
         <p className="text-muted-foreground">
           It is also the honest caveat on this site&rsquo;s own numbers. The projection drawn
           on every chart in the simulator estimates drift and volatility from past returns and
           extends them forward as a tidy band. That is precisely the kind of estimate this book
           tells you not to trust about extremes. Read the band as a description of an ordinary
-          week — never as a limit on how bad or how good things can get.
+          week, NEVER as a limit on how bad or how good things can get.
         </p>
       </div>
 
@@ -86,13 +85,13 @@ export default function BlackSwanPage() {
           <h2 className="font-semibold">Read the book first</h2>
           <p className="text-muted-foreground text-sm text-pretty">
             The quizzes below follow the book chapter by chapter, so they only work if you
-            actually read it. A paperback is about $11 — genuinely one of the better returns
-            you will get on eleven dollars, given that the whole point of the book is how to
-            think about returns.
+            actually read it! A paperback is about $11. genuinely one of the better returns
+            you will get on $11, given that the whole point of the book is how to
+            think about risk.
           </p>
           <Button asChild>
             <a href={AMAZON_URL} target="_blank" rel="noopener noreferrer">
-              Buy on Amazon
+              Buy on Amazon!
               <ExternalLink />
             </a>
           </Button>

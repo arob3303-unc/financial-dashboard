@@ -106,8 +106,8 @@ export function ChapterList({ chapters }: { chapters: PublicChapter[] }) {
           </div>
           <Progress value={(passedCount / chapters.length) * 100} />
           <p className="text-muted-foreground text-xs">
-            Read a chapter, then take its quiz. Score 80% or better to unlock
-            the next one.
+            Read a chapter, then take the quiz. Score 80% or better to unlock
+            the next quiz.
           </p>
         </CardContent>
       </Card>
@@ -116,7 +116,7 @@ export function ChapterList({ chapters }: { chapters: PublicChapter[] }) {
         <Card>
           <CardContent className="flex flex-wrap items-center justify-between gap-3">
             <p className="text-sm">
-              Sign in to take the quizzes — your progress is saved to your
+              Sign in to take the quizzes, your progress is saved to your
               account.
             </p>
             <SignInButton mode="modal">
@@ -202,8 +202,8 @@ export function ChapterList({ chapters }: { chapters: PublicChapter[] }) {
                             >
                               You scored {justScored.score}%
                               {justScored.passed
-                                ? " — passed"
-                                : ` — ${justScored.passMark}% needed`}
+                                ? ", passed"
+                                : `, ${justScored.passMark}% needed`}
                             </span>
                             {justScored.best !== justScored.score &&
                               ` · best ${justScored.best}%`}

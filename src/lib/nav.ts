@@ -23,25 +23,25 @@ export const SECTIONS: Section[] = [
   {
     href: "/black-swan",
     title: "The Black Swan",
-    tagline: "Why the tails matter",
+    tagline: "Learn about risk",
     blurb:
-      "Nassim Taleb's argument that the rare, unpredictable events are the ones that decide outcomes — and that models built on tidy bell curves badly understate them. Read this first: it is the honest caveat on every forecast this site draws.",
+      "Nassim Taleb's argument that the rare, unpredictable events are the ones that decide outcomes, and that models built on tidy bell curves badly understate them. Read this first: it is the honest caveat on every forecast this site draws.",
     icon: BookOpen,
   },
   {
     href: "/options",
     title: "Learning Options",
-    tagline: "Risk with a known floor",
+    tagline: "The scary risk",
     blurb:
-      "Calls, puts, premium, and payoff asymmetry. Options are how you can take a position where the most you can lose is decided up front — the practical answer to the problem the Black Swan describes.",
+      "Calls, puts, premium, and payoff asymmetry. Options are how you can take a position where the most you can lose is decided up front. That is the practical answer to the problem the Black Swan describes.",
     icon: Sigma,
   },
   {
     href: "/long-term",
     title: "Long-term Investing Simulator",
-    tagline: "Compounding, on real prices",
+    tagline: "The safe risk",
     blurb:
-      "Pick a ticker and a window and watch what a simulated balance would have done, with a projection and an AI read on the trend. Real market data, fictional money, twenty-year thinking.",
+      "Pick a ticker and a window and watch what a simulated balance would have done, with a projection and an AI read on the trend. Real market data, fictional money, a twenty year horizon.",
     icon: LineChart,
   },
 ];

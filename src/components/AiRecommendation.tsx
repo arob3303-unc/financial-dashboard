@@ -221,7 +221,7 @@ export function AiRecommendation({
         </CardTitle>
         <CardDescription>
           Claude reads {symbol}&rsquo;s {timeframe.toLowerCase()} price action, the
-          projection, and global market trends. Simulated — not financial advice.
+          projection, and global market trends. Simulated, not financial advice.
         </CardDescription>
         <CardAction>
           <Button
