@@ -55,12 +55,12 @@ export default function HomePage() {
       {/* Hero */}
       <section>
         <h1 className="text-4xl font-semibold tracking-tight text-balance sm:text-5xl">
-          Learn the risk. Then take it.
+          Learn the risk.
         </h1>
         <p className="text-muted-foreground mt-4 max-w-2xl text-lg text-pretty">
-          Extro is a market simulator for people who want to get comfortable with
-          calculated risk — real prices, fictional money, and nothing to lose while you
-          learn.
+          Extro is a learning platform and a market simulator for people who want to get comfortable with
+          calculated risk. <br></br>&quot;real prices, fictional money, and nothing to lose while you
+          learn&quot;
         </p>
 
         <div className="mt-8 max-w-3xl">
@@ -74,12 +74,12 @@ export default function HomePage() {
         <div className="text-muted-foreground mt-4 grid gap-4 text-pretty sm:grid-cols-2 sm:gap-8">
           <p>
             Most people avoid investing because the downside feels unbounded and the
-            vocabulary is hostile. Extro is built to fix the first problem by fixing the
+            vocabulary is confusing. Extro is built to fix the first problem by fixing the
             second: understand where the real risk lives, learn the instruments that put a
             floor under it, and practise on live market data without any money on the line.
           </p>
           <p>
-            The goal is concrete — financial independence inside twenty years. That is not
+            The goal is concrete, financial independence inside twenty years! That is not
             a trading target, it is a savings-rate problem. The lever that matters most is
             how much of your income you never spend, which is why the whole site is
             organised around one rule.
@@ -92,9 +92,9 @@ export default function HomePage() {
               Live on 60% of your income. Invest the other 40%.
             </p>
             <p className="text-muted-foreground mt-2 text-sm text-pretty">
-              Wherever that is possible for you. A high savings rate compounds harder than
-              good stock picking does, and it is the one input you fully control. The
-              simulator exists to show you what that 40% does over a long horizon.
+              Wherever that is possible for you. A high savings rate compounds hardm and it is 
+              the one input you fully control. The simulator exists to show you what that 40% 
+              does over a long horizon. It is important to live below your means.
             </p>
             <SplitBar />
           </CardContent>

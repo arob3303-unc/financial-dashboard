@@ -1,7 +1,7 @@
 "use client";
 
 import * as React from "react";
-import { AlertCircle, Loader2 } from "lucide-react";
+import { AlertCircle, ChevronLeft, ChevronRight, Loader2 } from "lucide-react";
 
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
@@ -15,6 +15,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { cn } from "@/lib/utils";
 
 export type PublicChapter = {
   number: number;
@@ -36,12 +37,12 @@ export type AttemptResult = {
 };
 
 /**
- * Take one chapter's quiz.
+ * Take one chapter's quiz, one question at a time.
  *
- * The dialog never reveals which answers were right. On submit it closes and hands the
- * result up; the score and the new lock state are read off the chapter list instead. The
- * API deliberately does not return a per-question breakdown either, so the answer key is
- * not sitting in the network tab.
+ * The dialog never reveals which answers were right — not even while stepping between
+ * questions. On submit it closes and hands the result up; the score and the new lock
+ * state are read off the chapter list instead. The API deliberately does not return a
+ * per-question breakdown either, so the answer key is not sitting in the network tab.
  */
 export function QuizDialog({
   chapter,
@@ -55,24 +56,31 @@ export function QuizDialog({
   onSubmitted: (result: AttemptResult) => void;
 }) {
   const [answers, setAnswers] = React.useState<(number | null)[]>([]);
+  const [index, setIndex] = React.useState(0);
   const [submitting, setSubmitting] = React.useState(false);
   const [error, setError] = React.useState<string | null>(null);
 
   // Reset during render, keyed on the chapter and the open/closed transition, so every
-  // reopening starts blank — a retake never shows the previous attempt's selections.
+  // reopening starts blank and back on question one — a retake never shows the previous
+  // attempt's selections, nor resumes mid-quiz.
   const attemptKey = `${chapter?.number ?? "none"}:${open}`;
   const [activeKey, setActiveKey] = React.useState<string | null>(null);
   if (activeKey !== attemptKey) {
     setActiveKey(attemptKey);
     setAnswers(new Array(chapter?.questions.length ?? 0).fill(null));
+    setIndex(0);
     setError(null);
     setSubmitting(false);
   }
 
   if (!chapter) return null;
 
+  const total = chapter.questions.length;
+  const question = chapter.questions[index];
   const answered = answers.filter((answer) => answer !== null).length;
-  const allAnswered = answered === chapter.questions.length;
+  const allAnswered = total > 0 && answered === total;
+  const onFirst = index === 0;
+  const onLast = index >= total - 1;
 
   async function submit() {
     if (!chapter) return;
@@ -110,20 +118,20 @@ export function QuizDialog({
             Chapter {chapter.number} — {chapter.title}
           </DialogTitle>
           <DialogDescription>
-            {chapter.questions.length} questions. Your score appears in the chapter list
-            once you submit.
+            Question {Math.min(index + 1, total)} of {total}. Your score appears in the
+            chapter list once you submit.
           </DialogDescription>
         </DialogHeader>
 
         <div className="min-h-0 flex-1 space-y-6 overflow-y-auto pr-1">
-          {chapter.questions.map((question, index) => (
-            <div key={question.prompt} className="space-y-3">
-              <p className="text-sm font-medium">
-                <span className="text-muted-foreground mr-2">{index + 1}.</span>
-                {question.prompt}
-              </p>
+          {question && (
+            <div className="space-y-3">
+              <p className="text-sm font-medium">{question.prompt}</p>
 
               <RadioGroup
+                // Remount per question: without it the group keeps the previous
+                // question's roving focus and animates the old selection across.
+                key={index}
                 value={answers[index] === null ? undefined : String(answers[index])}
                 onValueChange={(value) =>
                   setAnswers((current) => {
@@ -154,7 +162,7 @@ export function QuizDialog({
                 ))}
               </RadioGroup>
             </div>
-          ))}
+          )}
 
           {error && (
             <Alert variant="destructive">
@@ -166,9 +174,45 @@ export function QuizDialog({
         </div>
 
         <DialogFooter className="items-center sm:justify-between">
-          <span className="text-muted-foreground text-xs">
-            {answered} of {chapter.questions.length} answered
-          </span>
+          <div className="flex items-center gap-2">
+            <Button
+              variant="outline"
+              size="icon"
+              aria-label="Previous question"
+              disabled={onFirst}
+              onClick={() => setIndex((current) => Math.max(0, current - 1))}
+            >
+              <ChevronLeft />
+            </Button>
+            <Button
+              variant="outline"
+              size="icon"
+              aria-label="Next question"
+              disabled={onLast}
+              onClick={() => setIndex((current) => Math.min(total - 1, current + 1))}
+            >
+              <ChevronRight />
+            </Button>
+
+            {/* Which questions are still blank — says nothing about correctness. */}
+            <div className="ml-1 flex items-center gap-1.5" aria-hidden>
+              {answers.map((answer, dotIndex) => (
+                <span
+                  key={dotIndex}
+                  className={cn(
+                    "size-1.5 rounded-full transition-colors",
+                    answer === null ? "bg-muted-foreground/30" : "bg-primary",
+                    dotIndex === index && "ring-ring/60 ring-2 ring-offset-1",
+                  )}
+                />
+              ))}
+            </div>
+
+            <span className="text-muted-foreground ml-1 text-xs">
+              {answered} of {total} answered
+            </span>
+          </div>
+
           <div className="flex gap-2">
             <Button variant="ghost" onClick={() => onOpenChange(false)}>
               Cancel
