@@ -1,6 +1,8 @@
 "use client";
 
 import * as React from "react";
+import Link from "next/link";
+import { usePathname } from "next/navigation";
 import { Show, SignInButton, UserButton } from "@clerk/nextjs";
 import { useTheme } from "next-themes";
 import { Moon, Settings2, Sun, Wallet } from "lucide-react";
@@ -17,6 +19,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Skeleton } from "@/components/ui/skeleton";
+import { SiteNav } from "@/components/SiteNav";
 import { useBalance } from "@/components/BalanceProvider";
 import { formatCurrency } from "@/lib/api";
 
@@ -118,24 +121,30 @@ function BalanceButton({ onOpen }: { onOpen: () => void }) {
   );
 }
 
+/** The simulated balance only drives numbers on the dashboard, so it only shows there. */
+const BALANCE_ROUTE = "/long-term";
+
 export function AppHeader() {
   const [dialogOpen, setDialogOpen] = React.useState(false);
   const { balance } = useBalance();
+  const showBalance = usePathname() === BALANCE_ROUTE;
 
   return (
     <header className="bg-background/80 sticky top-0 z-50 border-b backdrop-blur-sm">
       <div className="mx-auto flex h-14 max-w-7xl items-center gap-3 px-4 sm:px-6">
-        <div className="flex items-baseline gap-2">
+        <Link href="/" className="flex items-baseline gap-2">
           <span className="text-xl font-semibold tracking-tight">Extro</span>
           <span className="text-muted-foreground hidden text-xs sm:inline">
             stock forecaster
           </span>
-        </div>
+        </Link>
 
         <div className="ml-auto flex items-center gap-2">
-          <Show when="signed-in">
-            <BalanceButton onOpen={() => setDialogOpen(true)} />
-          </Show>
+          {showBalance && (
+            <Show when="signed-in">
+              <BalanceButton onOpen={() => setDialogOpen(true)} />
+            </Show>
+          )}
           <ThemeToggle />
           {/* One check instead of two: the signed-out branch is the fallback. */}
           <Show
@@ -148,14 +157,17 @@ export function AppHeader() {
           >
             <UserButton />
           </Show>
+          <SiteNav />
         </div>
       </div>
 
-      <BalanceDialog
-        key={`${dialogOpen}:${balance}`}
-        open={dialogOpen}
-        onOpenChange={setDialogOpen}
-      />
+      {showBalance && (
+        <BalanceDialog
+          key={`${dialogOpen}:${balance}`}
+          open={dialogOpen}
+          onOpenChange={setDialogOpen}
+        />
+      )}
     </header>
   );
 }

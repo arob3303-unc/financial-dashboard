@@ -1,272 +1,140 @@
-"use client";
+import type { Metadata } from "next";
+import Link from "next/link";
+import { ArrowRight } from "lucide-react";
 
-import * as React from "react";
-import { Show, SignInButton } from "@clerk/nextjs";
-import { Info } from "lucide-react";
+import { HeroVisual } from "@/components/HeroVisual";
+import { Card, CardContent } from "@/components/ui/card";
+import { SECTIONS } from "@/lib/nav";
 
-import { AiRecommendation } from "@/components/AiRecommendation";
-import { StatCard } from "@/components/StatCard";
-import {
-  StockChart,
-  StockChartError,
-  StockChartSkeleton,
-  type ChartSlot,
-} from "@/components/StockChart";
-import { useBalance } from "@/components/BalanceProvider";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { useStockData } from "@/hooks/use-stock-data";
-import {
-  formatCurrency,
-  formatPercent,
-  TICKERS,
-  TIMEFRAMES,
-  type Timeframe,
-} from "@/lib/api";
+export const metadata: Metadata = {
+  title: "Extro — Learn the risk, take the risk",
+  description:
+    "A fictional market simulator for learning to take calculated risk: tail events, options, and long-term compounding on real price data.",
+};
 
-function TickerSelect({
-  label,
-  value,
-  onChange,
-  slot,
-}: {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  slot: ChartSlot;
-}) {
+/** The one actionable number on the page, so it gets a visual rather than a sentence. */
+function SplitBar() {
   return (
-    <div className="grid gap-1.5">
-      <Label className="text-muted-foreground text-xs font-medium tracking-wide uppercase">
-        {label}
-      </Label>
-      <Select value={value} onValueChange={onChange}>
-        <SelectTrigger className="w-[9.5rem]">
+    <div className="mt-6">
+      <div
+        className="flex h-3 w-full overflow-hidden rounded-full"
+        role="img"
+        aria-label="Live on 60 percent of your income, invest 40 percent"
+      >
+        <div style={{ width: "60%", backgroundColor: "var(--chart-1)" }} />
+        {/* A 2px gap so the two segments read as separate quantities, not one bar. */}
+        <div className="bg-background w-0.5 shrink-0" />
+        <div style={{ width: "40%", backgroundColor: "var(--chart-2)" }} />
+      </div>
+
+      <div className="mt-2 flex justify-between text-xs">
+        <span className="flex items-center gap-1.5">
           <span
-            className="size-2.5 shrink-0 rounded-[2px]"
-            style={{ backgroundColor: `var(--${slot})` }}
+            className="size-2.5 rounded-[2px]"
+            style={{ backgroundColor: "var(--chart-1)" }}
             aria-hidden
           />
-          <SelectValue />
-        </SelectTrigger>
-        <SelectContent>
-          {TICKERS.map((ticker) => (
-            <SelectItem key={ticker} value={ticker}>
-              {ticker}
-            </SelectItem>
-          ))}
-        </SelectContent>
-      </Select>
+          <span className="font-medium">60% — live on it</span>
+        </span>
+        <span className="flex items-center gap-1.5">
+          <span
+            className="size-2.5 rounded-[2px]"
+            style={{ backgroundColor: "var(--chart-2)" }}
+            aria-hidden
+          />
+          <span className="font-medium">40% — invest it</span>
+        </span>
+      </div>
     </div>
   );
 }
 
-/** One chart card: its own loading, error and empty states, independent of its sibling. */
-function ChartPanel({
-  symbol,
-  timeframe,
-  slot,
-}: {
-  symbol: string;
-  timeframe: Timeframe;
-  slot: ChartSlot;
-}) {
-  const { series, forecast, forecastError, loading, error, reload } = useStockData(
-    symbol,
-    timeframe,
-  );
-
+export default function HomePage() {
   return (
-    <Card className="min-w-0">
-      <CardContent className="min-w-0">
-        {loading && <StockChartSkeleton />}
+    <div className="mx-auto max-w-5xl px-4 py-10 sm:px-6 sm:py-16">
+      {/* Hero */}
+      <section>
+        <h1 className="text-4xl font-semibold tracking-tight text-balance sm:text-5xl">
+          Learn the risk. Then take it.
+        </h1>
+        <p className="text-muted-foreground mt-4 max-w-2xl text-lg text-pretty">
+          Extro is a market simulator for people who want to get comfortable with
+          calculated risk — real prices, fictional money, and nothing to lose while you
+          learn.
+        </p>
 
-        {!loading && error && <StockChartError message={error} onRetry={reload} />}
+        <div className="mt-8 max-w-3xl">
+          <HeroVisual />
+        </div>
+      </section>
 
-        {!loading && !error && series && series.points.length === 0 && (
-          <div className="text-muted-foreground flex h-[22rem] flex-col items-center justify-center gap-2 text-sm">
-            <Info className="size-5" aria-hidden />
-            <span>No price data for {symbol} over {timeframe.toLowerCase()}.</span>
-            <Button size="sm" variant="outline" onClick={reload}>
-              Retry
-            </Button>
-          </div>
-        )}
-
-        {!loading && !error && series && series.points.length > 0 && (
-          <>
-            <StockChart
-              series={series}
-              forecast={forecast}
-              timeframe={timeframe}
-              slot={slot}
-            />
-            {forecastError && (
-              <p className="text-muted-foreground mt-3 text-xs">
-                Projection unavailable: {forecastError}
-              </p>
-            )}
-          </>
-        )}
-      </CardContent>
-    </Card>
-  );
-}
-
-export default function Home() {
-  const [primary, setPrimary] = React.useState("NVDA");
-  const [comparison, setComparison] = React.useState("AAPL");
-  const [timeframe, setTimeframe] = React.useState<Timeframe>("1 Year");
-
-  const { balance } = useBalance();
-
-  // The KPI row and the AI panel both reason about the primary ticker, so they
-  // share one fetch rather than each starting their own.
-  const primaryData = useStockData(primary, timeframe);
-  const meta = primaryData.series?.meta ?? null;
-  const forecast = primaryData.forecast;
-
-  const realizedProfit = meta ? (balance * meta.changePct) / 100 : null;
-  const projectedProfit = forecast
-    ? (balance * forecast.expectedReturnPct) / 100
-    : null;
-
-  return (
-    <div className="mx-auto min-w-0 max-w-7xl space-y-6 px-4 py-6 sm:px-6 sm:py-8">
-      <div className="flex flex-wrap items-end justify-between gap-4">
-        <div>
-          <h1 className="text-2xl font-semibold tracking-tight">Forecast</h1>
-          <p className="text-muted-foreground text-sm">
-            Real prices, simulated money. Pick a ticker and a window to see what
-            {" "}{formatCurrency(balance, 0)} would have done — and where the trend points.
+      {/* What this is and what it is for */}
+      <section className="mt-14">
+        <h2 className="text-2xl font-semibold tracking-tight">What this is for</h2>
+        <div className="text-muted-foreground mt-4 grid gap-4 text-pretty sm:grid-cols-2 sm:gap-8">
+          <p>
+            Most people avoid investing because the downside feels unbounded and the
+            vocabulary is hostile. Extro is built to fix the first problem by fixing the
+            second: understand where the real risk lives, learn the instruments that put a
+            floor under it, and practise on live market data without any money on the line.
+          </p>
+          <p>
+            The goal is concrete — financial independence inside twenty years. That is not
+            a trading target, it is a savings-rate problem. The lever that matters most is
+            how much of your income you never spend, which is why the whole site is
+            organised around one rule.
           </p>
         </div>
 
-        <div className="flex flex-wrap items-end gap-3">
-          <TickerSelect
-            label="Ticker"
-            value={primary}
-            onChange={setPrimary}
-            slot="chart-1"
-          />
-          <TickerSelect
-            label="Compare with"
-            value={comparison}
-            onChange={setComparison}
-            slot="chart-2"
-          />
-        </div>
-      </div>
-
-      {/* The six timeframes are wider than a phone. Let the strip scroll inside
-          itself rather than pushing the page into a horizontal scroll. */}
-      <div className="-mx-4 overflow-x-auto px-4 sm:mx-0 sm:px-0">
-        <Tabs
-          value={timeframe}
-          onValueChange={(value) => setTimeframe(value as Timeframe)}
-        >
-          <TabsList className="w-max">
-            {TIMEFRAMES.map((option) => (
-              <TabsTrigger key={option} value={option}>
-                {option}
-              </TabsTrigger>
-            ))}
-          </TabsList>
-        </Tabs>
-      </div>
-
-      <section
-        className="grid min-w-0 gap-4 sm:grid-cols-2 lg:grid-cols-4"
-        aria-label={`${primary} summary`}
-      >
-        <StatCard
-          label={`${primary} price`}
-          value={meta ? formatCurrency(meta.endPrice) : "—"}
-          delta={meta?.changePct}
-          caption={`over ${timeframe.toLowerCase()}`}
-          loading={primaryData.loading}
-        />
-        <StatCard
-          label="Realized on your balance"
-          value={realizedProfit === null ? "—" : formatCurrency(realizedProfit)}
-          caption={`if you had held ${formatCurrency(balance, 0)}`}
-          loading={primaryData.loading}
-        />
-        <StatCard
-          label="Projected value"
-          value={
-            forecast
-              ? formatCurrency(
-                  forecast.points[forecast.points.length - 1].projected,
-                )
-              : "—"
-          }
-          delta={forecast?.expectedReturnPct}
-          caption={forecast ? `in ${forecast.horizonDays} trading days` : "—"}
-          loading={primaryData.loading}
-        />
-        <StatCard
-          label="Projected profit"
-          value={projectedProfit === null ? "—" : formatCurrency(projectedProfit)}
-          caption={
-            forecast
-              ? `${formatPercent(forecast.expectedReturnPct)} of ${formatCurrency(balance, 0)}`
-              : "—"
-          }
-          loading={primaryData.loading}
-        />
-      </section>
-
-      <section className="grid min-w-0 gap-4 xl:grid-cols-2" aria-label="Price charts">
-        <ChartPanel symbol={primary} timeframe={timeframe} slot="chart-1" />
-        <ChartPanel symbol={comparison} timeframe={timeframe} slot="chart-2" />
-      </section>
-
-      <Show when="signed-in">
-        <AiRecommendation
-          symbol={primary}
-          timeframe={timeframe}
-          balance={balance}
-          meta={meta}
-          forecast={forecast}
-          ready={!primaryData.loading && !!meta}
-        />
-      </Show>
-
-      <Show when="signed-out">
-        <Card>
-          <CardHeader>
-            <CardTitle>AI outlook</CardTitle>
-          </CardHeader>
+        <Card className="mt-8">
           <CardContent>
-            <Alert>
-              <Info />
-              <AlertTitle>Sign in to generate a recommendation</AlertTitle>
-              <AlertDescription className="gap-3">
-                <span>
-                  Claude reads the price action, the projection, and current market
-                  trends to explain what the scenario implies.
-                </span>
-                <SignInButton mode="modal">
-                  <Button size="sm">Sign in</Button>
-                </SignInButton>
-              </AlertDescription>
-            </Alert>
+            <p className="text-lg font-medium text-balance">
+              Live on 60% of your income. Invest the other 40%.
+            </p>
+            <p className="text-muted-foreground mt-2 text-sm text-pretty">
+              Wherever that is possible for you. A high savings rate compounds harder than
+              good stock picking does, and it is the one input you fully control. The
+              simulator exists to show you what that 40% does over a long horizon.
+            </p>
+            <SplitBar />
           </CardContent>
         </Card>
-      </Show>
+      </section>
 
-      <p className="text-muted-foreground text-xs">
+      {/* The three sections */}
+      <section className="mt-14">
+        <h2 className="text-2xl font-semibold tracking-tight">Start here</h2>
+        <div className="mt-6 grid gap-4 md:grid-cols-3">
+          {SECTIONS.map((section) => {
+            const Icon = section.icon;
+
+            return (
+              <Link
+                key={section.href}
+                href={section.href}
+                className="group focus-visible:ring-ring rounded-xl focus-visible:ring-2 focus-visible:ring-offset-2 focus-visible:outline-none"
+              >
+                {/* Card is a plain div here -- the ring, not a border, is its edge. */}
+                <Card className="hover:ring-foreground/25 hover:bg-accent/40 h-full transition-colors">
+                  <CardContent className="flex h-full flex-col">
+                    <Icon className="text-muted-foreground size-5" aria-hidden />
+                    <h3 className="mt-3 font-semibold">{section.title}</h3>
+                    <p className="text-muted-foreground mt-2 flex-1 text-sm text-pretty">
+                      {section.blurb}
+                    </p>
+                    <span className="mt-4 flex items-center gap-1.5 text-sm font-medium">
+                      {section.tagline}
+                      <ArrowRight className="size-4 transition-transform group-hover:translate-x-0.5" />
+                    </span>
+                  </CardContent>
+                </Card>
+              </Link>
+            );
+          })}
+        </div>
+      </section>
+
+      <p className="text-muted-foreground mt-14 text-xs">
         Extro is a simulation. Prices are real market data; balances, profits and
         projections are fictional and are not financial advice.
       </p>
