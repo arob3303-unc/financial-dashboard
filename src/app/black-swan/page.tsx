@@ -85,9 +85,9 @@ export default function BlackSwanPage() {
           <h2 className="font-semibold">Read the book first</h2>
           <p className="text-muted-foreground text-sm text-pretty">
             The quizzes below follow the book chapter by chapter, so they only work if you
-            actually read it! A paperback is about $11. genuinely one of the better returns
+            actually read it! A paperback is about $11. Genuinely one of the better returns
             you will get on $11, given that the whole point of the book is how to
-            think about risk.
+            think about returns.
           </p>
           <Button asChild>
             <a href={AMAZON_URL} target="_blank" rel="noopener noreferrer">
